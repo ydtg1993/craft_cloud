@@ -1,0 +1,489 @@
+"""Generate TS + QM files for new languages from zh_CN.ts template."""
+import xml.etree.ElementTree as ET
+import copy, os, subprocess
+
+I18N_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'resources', 'i18n')
+LRELEASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'venv', 'lib', 'site-packages', 'PySide6', 'lrelease.exe')
+
+BASE_TS = os.path.join(I18N_DIR, 'craft_cloud.zh_CN.ts')
+
+# ── Key UI translations per language ──────────────────────────
+TRANSLATIONS = {
+    'fr': {
+        'Confirm': 'Confirmer', 'Cancel': 'Annuler', 'OK': 'OK', 'Save': 'Enregistrer',
+        'Close': 'Fermer', 'Refresh': 'Actualiser', 'Rename': 'Renommer',
+        'Delete': 'Supprimer', 'Move': 'Déplacer', 'Properties': 'Propriétés',
+        'Download': 'Télécharger', 'Upload': 'Téléverser',
+        'New Folder': 'Nouveau dossier', 'Upload Files': 'Téléverser des fichiers',
+        'Upload Folder': 'Téléverser un dossier', 'Search': 'Rechercher',
+        'Settings': 'Paramètres', 'About': 'À propos', 'Account': 'Compte',
+        'Logout': 'Déconnexion', 'Task Queue': "File d'attente",
+        'Language': 'Langue', 'Theme': 'Thème', 'View Mode': "Mode d'affichage",
+        'Root': 'Racine', 'Directories': 'Répertoires', 'Unknown': 'Inconnu',
+        'Warning': 'Avertissement', 'Success': 'Succès', 'Error': 'Erreur',
+        'Notice': 'Avis', 'Enabled': 'Activé', 'Disabled': 'Désactivé',
+        'Phone': 'Téléphone', 'Connect': 'Connecter',
+        'Connecting...': 'Connexion...', 'Login successful!': 'Connexion réussie !',
+        'Login failed': 'Échec de connexion', 'Verification': 'Vérification',
+        'Username': "Nom d'utilisateur", 'Auto Sync': 'Synchro auto',
+        'Exit': 'Quitter', 'CraftCloud': 'CraftCloud',
+        'Telegram Login': 'Connexion Telegram', 'API ID': 'API ID',
+        'API Hash': 'API Hash', 'Generate QR Code': 'Générer QR Code',
+        'Refresh QR Code': 'Actualiser QR Code',
+        'Core Features': 'Fonctionnalités principales',
+        'License': 'Licence', 'Acknowledgments': 'Remerciements',
+        'Version History': 'Historique des versions',
+        'Developer': 'Développeur', 'Author': 'Auteur', 'Website': 'Site web',
+        'Project Homepage': "Page d'accueil du projet",
+        'Name': 'Nom', 'Application': 'Application',
+        'Alias': 'Alias', 'Syncing': 'Synchro en cours',
+        'Completed': 'Terminé', 'Failed': 'Échoué', 'Pending': 'En attente',
+        'Progress': 'Progrès', 'Status': 'Statut', 'Size': 'Taille',
+        'Type': 'Type', 'Telegram ID': 'ID Telegram',
+        'Api Id': 'ID API', 'Api Hash': 'Hash API',
+        'Open Cloud': 'Ouvrir Cloud',
+        'Plane Cloud — Use Telegram as unlimited cloud storage':
+            "Plane Cloud — Utiliser Telegram comme stockage cloud illimité",
+        'Qt for Python — GUI framework': 'Qt for Python — Framework GUI',
+        'Fluent Design component library': 'Bibliothèque de composants Fluent Design',
+        'Telegram MTProto API client library': "Bibliothèque cliente Telegram MTProto API",
+        'Python SQL toolkit and ORM': 'Boîte à outils SQL Python et ORM',
+        'Data validation and settings management': 'Validation de données et gestion des paramètres',
+        'Python logging library': 'Bibliothèque de journalisation Python',
+        'Pure Python full-text search engine': 'Moteur de recherche plein texte en Python pur',
+        'Python image processing library': "Bibliothèque de traitement d'images Python",
+        'Chinese word segmentation library': 'Bibliothèque de segmentation de mots chinois',
+        'Disk cache library': 'Bibliothèque de cache disque',
+        'QR code generation library': 'Bibliothèque de génération de QR codes',
+        'Complete architecture refactoring: layered architecture '
+        '(core/model/services/view), SOLID principles':
+            "Refonte complète de l'architecture : architecture en couches "
+            "(core/model/services/view), principes SOLID",
+        'Technology stack modernization: SQLAlchemy 2.x ORM, '
+        'Pydantic config, loguru logging':
+            "Modernisation de la pile technologique : SQLAlchemy 2.x ORM, "
+            "configuration Pydantic, journalisation loguru",
+        'UI upgrade: qfluentwidgets Fluent Design component library':
+            "Mise à jour UI : bibliothèque de composants qfluentwidgets Fluent Design",
+        'New Task Queue unified scheduling, Auto Sync dashboard':
+            'Nouvelle file d\'attente unifiée, tableau de bord de synchronisation automatique',
+        'System tray minimization with background auto sync':
+            'Minimisation dans la barre d\'état avec synchronisation automatique en arrière-plan',
+        'Whoosh full-text search + Chinese word segmentation (jieba)':
+            'Recherche plein texte Whoosh + segmentation de mots chinois (jieba)',
+        'Initial release based on PyQt5': 'Version initiale basée sur PyQt5',
+        'Basic file upload/download functionality': 'Fonctionnalité de base de téléchargement',
+        'Telegram channel-based storage': 'Stockage basé sur les canaux Telegram',
+    },
+    'de': {
+        'Confirm': 'Bestätigen', 'Cancel': 'Abbrechen', 'OK': 'OK', 'Save': 'Speichern',
+        'Close': 'Schließen', 'Refresh': 'Aktualisieren', 'Rename': 'Umbenennen',
+        'Delete': 'Löschen', 'Move': 'Verschieben', 'Properties': 'Eigenschaften',
+        'Download': 'Herunterladen', 'Upload': 'Hochladen',
+        'New Folder': 'Neuer Ordner', 'Upload Files': 'Dateien hochladen',
+        'Upload Folder': 'Ordner hochladen', 'Search': 'Suchen',
+        'Settings': 'Einstellungen', 'About': 'Über', 'Account': 'Konto',
+        'Logout': 'Abmelden', 'Task Queue': 'Aufgabenliste',
+        'Language': 'Sprache', 'Theme': 'Design', 'View Mode': 'Ansichtsmodus',
+        'Root': 'Stamm', 'Directories': 'Verzeichnisse', 'Unknown': 'Unbekannt',
+        'Warning': 'Warnung', 'Success': 'Erfolg', 'Error': 'Fehler',
+        'Notice': 'Hinweis', 'Enabled': 'Aktiviert', 'Disabled': 'Deaktiviert',
+        'Phone': 'Telefon', 'Connect': 'Verbinden',
+        'Connecting...': 'Verbinden...', 'Login successful!': 'Anmeldung erfolgreich!',
+        'Login failed': 'Anmeldung fehlgeschlagen', 'Verification': 'Verifizierung',
+        'Username': 'Benutzername', 'Auto Sync': 'Auto-Sync',
+        'Exit': 'Beenden', 'CraftCloud': 'CraftCloud',
+        'Telegram Login': 'Telegram-Anmeldung', 'API ID': 'API-ID',
+        'API Hash': 'API-Hash', 'Generate QR Code': 'QR-Code generieren',
+        'Refresh QR Code': 'QR-Code aktualisieren',
+        'Core Features': 'Kernfunktionen', 'License': 'Lizenz',
+        'Acknowledgments': 'Danksagungen',
+        'Version History': 'Versionsverlauf',
+        'Developer': 'Entwickler', 'Author': 'Autor', 'Website': 'Webseite',
+        'Project Homepage': 'Projekt-Homepage',
+        'Name': 'Name', 'Application': 'Anwendung',
+        'Alias': 'Alias', 'Syncing': 'Synchronisierung',
+        'Completed': 'Abgeschlossen', 'Failed': 'Fehlgeschlagen', 'Pending': 'Ausstehend',
+        'Progress': 'Fortschritt', 'Status': 'Status', 'Size': 'Größe',
+        'Type': 'Typ', 'Telegram ID': 'Telegram-ID',
+        'Api Id': 'API-ID', 'Api Hash': 'API-Hash',
+        'Open Cloud': 'Cloud öffnen',
+        'Plane Cloud — Use Telegram as unlimited cloud storage':
+            'Plane Cloud — Telegram als unbegrenzten Cloud-Speicher nutzen',
+        'Qt for Python — GUI framework': 'Qt for Python — GUI-Framework',
+        'Fluent Design component library': 'Fluent Design-Komponentenbibliothek',
+        'Telegram MTProto API client library': 'Telegram MTProto API-Clientbibliothek',
+        'Python SQL toolkit and ORM': 'Python SQL-Toolkit und ORM',
+        'Data validation and settings management': 'Datenvalidierung und Einstellungsverwaltung',
+        'Python logging library': 'Python-Protokollierungsbibliothek',
+        'Pure Python full-text search engine': 'Reine Python-Volltextsuchmaschine',
+        'Python image processing library': 'Python-Bildverarbeitungsbibliothek',
+        'Chinese word segmentation library': 'Chinesische Wortsegmentierungsbibliothek',
+        'Disk cache library': 'Disk-Cache-Bibliothek',
+        'QR code generation library': 'QR-Code-Generierungsbibliothek',
+        'Complete architecture refactoring: layered architecture '
+        '(core/model/services/view), SOLID principles':
+            'Vollständige Architektur-Überarbeitung: Schichtenarchitektur '
+            '(core/model/services/view), SOLID-Prinzipien',
+        'Technology stack modernization: SQLAlchemy 2.x ORM, '
+        'Pydantic config, loguru logging':
+            'Modernisierung des Technologie-Stacks: SQLAlchemy 2.x ORM, '
+            'Pydantic-Konfiguration, loguru-Protokollierung',
+        'UI upgrade: qfluentwidgets Fluent Design component library':
+            'UI-Upgrade: qfluentwidgets Fluent Design-Komponentenbibliothek',
+        'New Task Queue unified scheduling, Auto Sync dashboard':
+            'Neue einheitliche Aufgabenwarteschlange, Auto-Sync-Dashboard',
+        'System tray minimization with background auto sync':
+            'Minimierung in die Taskleiste mit Hintergrund-Auto-Sync',
+        'Whoosh full-text search + Chinese word segmentation (jieba)':
+            'Whoosh-Volltextsuche + chinesische Wortsegmentierung (jieba)',
+        'Initial release based on PyQt5': 'Erstveröffentlichung basierend auf PyQt5',
+        'Basic file upload/download functionality': 'Grundlegende Datei-Upload/Download-Funktionalität',
+        'Telegram channel-based storage': 'Telegram-Kanal-basierte Speicherung',
+    },
+    'ru': {
+        'Confirm': 'Подтвердить', 'Cancel': 'Отмена', 'OK': 'ОК', 'Save': 'Сохранить',
+        'Close': 'Закрыть', 'Refresh': 'Обновить', 'Rename': 'Переименовать',
+        'Delete': 'Удалить', 'Move': 'Переместить', 'Properties': 'Свойства',
+        'Download': 'Скачать', 'Upload': 'Загрузить',
+        'New Folder': 'Новая папка', 'Upload Files': 'Загрузить файлы',
+        'Upload Folder': 'Загрузить папку', 'Search': 'Поиск',
+        'Settings': 'Настройки', 'About': 'О программе', 'Account': 'Аккаунт',
+        'Logout': 'Выйти', 'Task Queue': 'Очередь задач',
+        'Language': 'Язык', 'Theme': 'Тема', 'View Mode': 'Режим просмотра',
+        'Root': 'Корень', 'Directories': 'Папки', 'Unknown': 'Неизвестно',
+        'Warning': 'Предупреждение', 'Success': 'Успех', 'Error': 'Ошибка',
+        'Notice': 'Уведомление', 'Enabled': 'Включено', 'Disabled': 'Отключено',
+        'Phone': 'Телефон', 'Connect': 'Подключить',
+        'Connecting...': 'Подключение...', 'Login successful!': 'Вход выполнен!',
+        'Login failed': 'Ошибка входа', 'Verification': 'Проверка',
+        'Username': 'Имя пользователя', 'Auto Sync': 'Автосинхронизация',
+        'Exit': 'Выход', 'CraftCloud': 'CraftCloud',
+        'Telegram Login': 'Вход в Telegram', 'API ID': 'API ID',
+        'API Hash': 'API Hash', 'Generate QR Code': 'Создать QR-код',
+        'Refresh QR Code': 'Обновить QR-код',
+        'Core Features': 'Основные функции', 'License': 'Лицензия',
+        'Acknowledgments': 'Благодарности',
+        'Version History': 'История версий',
+        'Developer': 'Разработчик', 'Author': 'Автор', 'Website': 'Сайт',
+        'Project Homepage': 'Домашняя страница проекта',
+        'Name': 'Имя', 'Application': 'Приложение',
+        'Alias': 'Псевдоним', 'Syncing': 'Синхронизация',
+        'Completed': 'Завершено', 'Failed': 'Ошибка', 'Pending': 'Ожидание',
+        'Progress': 'Прогресс', 'Status': 'Статус', 'Size': 'Размер',
+        'Type': 'Тип', 'Telegram ID': 'Telegram ID',
+        'Api Id': 'API ID', 'Api Hash': 'API Hash',
+        'Open Cloud': 'Открыть облако',
+        'Plane Cloud — Use Telegram as unlimited cloud storage':
+            'Plane Cloud — Используйте Telegram как безлимитное облачное хранилище',
+        'Qt for Python — GUI framework': 'Qt for Python — GUI фреймворк',
+        'Fluent Design component library': 'Библиотека компонентов Fluent Design',
+        'Telegram MTProto API client library': 'Клиентская библиотека Telegram MTProto API',
+        'Python SQL toolkit and ORM': 'Python SQL инструментарий и ORM',
+        'Data validation and settings management': 'Проверка данных и управление настройками',
+        'Python logging library': 'Библиотека логирования Python',
+        'Pure Python full-text search engine': 'Полнотекстовый поисковый движок на чистом Python',
+        'Python image processing library': 'Библиотека обработки изображений Python',
+        'Chinese word segmentation library': 'Библиотека сегментации китайских слов',
+        'Disk cache library': 'Библиотека дискового кэша',
+        'QR code generation library': 'Библиотека генерации QR-кодов',
+        'Complete architecture refactoring: layered architecture '
+        '(core/model/services/view), SOLID principles':
+            'Полный рефакторинг архитектуры: многоуровневая архитектура '
+            '(core/model/services/view), принципы SOLID',
+        'Technology stack modernization: SQLAlchemy 2.x ORM, '
+        'Pydantic config, loguru logging':
+            'Модернизация технологического стека: SQLAlchemy 2.x ORM, '
+            'конфигурация Pydantic, логирование loguru',
+        'UI upgrade: qfluentwidgets Fluent Design component library':
+            'Обновление UI: библиотека компонентов qfluentwidgets Fluent Design',
+        'New Task Queue unified scheduling, Auto Sync dashboard':
+            'Новая очередь задач, панель автосинхронизации',
+        'System tray minimization with background auto sync':
+            'Сворачивание в системный трей с фоновой автосинхронизацией',
+        'Whoosh full-text search + Chinese word segmentation (jieba)':
+            'Полнотекстовый поиск Whoosh + сегментация китайских слов (jieba)',
+        'Initial release based on PyQt5': 'Первый выпуск на основе PyQt5',
+        'Basic file upload/download functionality': 'Базовая функциональность загрузки/скачивания файлов',
+        'Telegram channel-based storage': 'Хранилище на основе Telegram-каналов',
+    },
+    'ko': {
+        'Confirm': '확인', 'Cancel': '취소', 'OK': '확인', 'Save': '저장',
+        'Close': '닫기', 'Refresh': '새로고침', 'Rename': '이름 변경',
+        'Delete': '삭제', 'Move': '이동', 'Properties': '속성',
+        'Download': '다운로드', 'Upload': '업로드',
+        'New Folder': '새 폴더', 'Upload Files': '파일 업로드',
+        'Upload Folder': '폴더 업로드', 'Search': '검색',
+        'Settings': '설정', 'About': '정보', 'Account': '계정',
+        'Logout': '로그아웃', 'Task Queue': '작업 대기열',
+        'Language': '언어', 'Theme': '테마', 'View Mode': '보기 모드',
+        'Root': '루트', 'Directories': '디렉토리', 'Unknown': '알 수 없음',
+        'Warning': '경고', 'Success': '성공', 'Error': '오류',
+        'Notice': '알림', 'Enabled': '활성화됨', 'Disabled': '비활성화됨',
+        'Phone': '전화번호', 'Connect': '연결',
+        'Connecting...': '연결 중...', 'Login successful!': '로그인 성공!',
+        'Login failed': '로그인 실패', 'Verification': '인증',
+        'Username': '사용자 이름', 'Auto Sync': '자동 동기화',
+        'Exit': '종료', 'CraftCloud': 'CraftCloud',
+        'Telegram Login': 'Telegram 로그인', 'API ID': 'API ID',
+        'API Hash': 'API Hash', 'Generate QR Code': 'QR 코드 생성',
+        'Refresh QR Code': 'QR 코드 새로고침',
+        'Core Features': '주요 기능', 'License': '라이선스',
+        'Acknowledgments': '감사의 글',
+        'Version History': '버전 기록',
+        'Developer': '개발자', 'Author': '제작자', 'Website': '웹사이트',
+        'Project Homepage': '프로젝트 홈페이지',
+        'Name': '이름', 'Application': '애플리케이션',
+        'Alias': '별칭', 'Syncing': '동기화 중',
+        'Completed': '완료됨', 'Failed': '실패', 'Pending': '대기 중',
+        'Progress': '진행률', 'Status': '상태', 'Size': '크기',
+        'Type': '유형', 'Telegram ID': 'Telegram ID',
+        'Api Id': 'API ID', 'Api Hash': 'API Hash',
+        'Open Cloud': '클라우드 열기',
+        'Plane Cloud — Use Telegram as unlimited cloud storage':
+            'Plane Cloud — Telegram을 무제한 클라우드 스토리지로 사용',
+        'Qt for Python — GUI framework': 'Qt for Python — GUI 프레임워크',
+        'Fluent Design component library': 'Fluent Design 컴포넌트 라이브러리',
+        'Telegram MTProto API client library': 'Telegram MTProto API 클라이언트 라이브러리',
+        'Python SQL toolkit and ORM': 'Python SQL 툴킷 및 ORM',
+        'Data validation and settings management': '데이터 검증 및 설정 관리',
+        'Python logging library': 'Python 로깅 라이브러리',
+        'Pure Python full-text search engine': '순수 Python 전체 텍스트 검색 엔진',
+        'Python image processing library': 'Python 이미지 처리 라이브러리',
+        'Chinese word segmentation library': '중국어 단어 분할 라이브러리',
+        'Disk cache library': '디스크 캐시 라이브러리',
+        'QR code generation library': 'QR 코드 생성 라이브러리',
+        'Complete architecture refactoring: layered architecture '
+        '(core/model/services/view), SOLID principles':
+            '전체 아키텍처 리팩토링: 계층형 아키텍처 '
+            '(core/model/services/view), SOLID 원칙',
+        'Technology stack modernization: SQLAlchemy 2.x ORM, '
+        'Pydantic config, loguru logging':
+            '기술 스택 현대화: SQLAlchemy 2.x ORM, '
+            'Pydantic 구성, loguru 로깅',
+        'UI upgrade: qfluentwidgets Fluent Design component library':
+            'UI 업그레이드: qfluentwidgets Fluent Design 컴포넌트 라이브러리',
+        'New Task Queue unified scheduling, Auto Sync dashboard':
+            '새로운 작업 대기열 통합 스케줄링, 자동 동기화 대시보드',
+        'System tray minimization with background auto sync':
+            '시스템 트레이 최소화 및 백그라운드 자동 동기화',
+        'Whoosh full-text search + Chinese word segmentation (jieba)':
+            'Whoosh 전체 텍스트 검색 + 중국어 단어 분할 (jieba)',
+        'Initial release based on PyQt5': 'PyQt5 기반 초기 릴리스',
+        'Basic file upload/download functionality': '기본 파일 업로드/다운로드 기능',
+        'Telegram channel-based storage': 'Telegram 채널 기반 스토리지',
+        '(not configured)': '(구성되지 않음)',
+        '1. API Credentials': '1. API 자격 증명',
+        '2. Scan to Login': '2. 스캔하여 로그인',
+        'API ID must be an integer': 'API ID는 정수여야 합니다',
+        'Add folder': '폴더 추가',
+        'Advanced Settings': '고급 설정',
+        'Application display language': '애플리케이션 표시 언어',
+        'Audio file': '오디오 파일',
+        'Automatically synchronize watched folders to Telegram': '감시 폴더를 Telegram에 자동 동기화',
+        'Basic': '기본',
+        'Batch Delete': '일괄 삭제',
+        'Batch Download': '일괄 다운로드',
+        'Batch Move to...': '일괄 이동...',
+        'Bottom tab → Settings': '하단 탭 → 설정',
+        'Browse': '찾아보기',
+        'Cancelled': '취소됨',
+        'Cannot load image': '이미지를 불러올 수 없습니다',
+        'Cannot prepare sync directory, aborting': '동기화 디렉토리를 준비할 수 없어 중단합니다',
+        'Cannot read file': '파일을 읽을 수 없습니다',
+        'Channel Name:': '채널 이름:',
+        'Channel creation failed': '채널 생성 실패',
+        'Chat ID': '채팅 ID',
+        'Chinese': '중국어',
+        'Click \'Fetch Proxy\' to get a working proxy': '사용 가능한 프록시를 가져오려면 \'프록시 가져오기\'를 클릭하세요',
+        'Click the button above to start': '위 버튼을 클릭하여 시작하세요',
+        'Click the button below to generate QR code': '아래 버튼을 클릭하여 QR 코드를 생성하세요',
+        'Confirm deletion': '삭제 확인',
+        'Connect your Telegram account': 'Telegram 계정 연결',
+        'Connecting to Telegram server...': 'Telegram 서버에 연결 중...',
+        'Created Time': '생성 시간',
+        'Daily upload limit reached': '일일 업로드 한도에 도달했습니다',
+        'Date Modified': '수정 날짜',
+        'Default Download Path': '기본 다운로드 경로',
+        'Default Sort': '기본 정렬',
+        'Delete (TG only)': '삭제 (TG 전용)',
+        'Delete Directory': '디렉토리 삭제',
+        'Delete Directory and Channel': '디렉토리 및 채널 삭제',
+        'Delete {count} file(s)?': '{count}개 파일을 삭제하시겠습니까?',
+        'Deleted': '삭제됨',
+        'Devices → Scan QR Code': '기기 → QR 코드 스캔',
+        'Directory where downloaded files are saved': '다운로드 파일이 저장되는 디렉토리',
+        'Download failed': '다운로드 실패',
+        'Download folder': '폴더 다운로드',
+        'Downloading': '다운로드 중',
+        'Duplicate Files': '중복 파일',
+        'Duplicate Folder': '중복 폴더',
+        'Enable Auto Sync': '자동 동기화 사용',
+        'Enable Daily Limit': '일일 한도 사용',
+        'End Date:': '종료 날짜:',
+        'English': '영어',
+        'Enter code:': '인증 코드 입력:',
+        'Failed to create directory': '디렉토리 생성 실패',
+        'Failed to delete directory': '디렉토리 삭제 실패',
+        'Failed to move file': '파일 이동 실패',
+        'Failed to rename directory': '디렉토리 이름 변경 실패',
+        'Failed to rename file': '파일 이름 변경 실패',
+        'Failed. Please try again.': '실패했습니다. 다시 시도해주세요.',
+        'Fields cannot be empty': '필드를 비워둘 수 없습니다',
+        'File Properties': '파일 속성',
+        'File not found or deleted': '파일을 찾을 수 없거나 삭제되었습니다',
+        'File uploaded but local record failed: {name}': '파일이 업로드되었지만 로컬 기록에 실패했습니다: {name}',
+        'Filename': '파일 이름',
+        'Folder': '폴더',
+        'Folder does not exist': '폴더가 존재하지 않습니다',
+        'Folder name:': '폴더 이름:',
+        'Folders monitored for automatic synchronization': '자동 동기화를 위해 모니터링되는 폴더',
+        'Found {count} file(s)': '{count}개 파일을 찾았습니다',
+        'Generating QR code...': 'QR 코드 생성 중...',
+        'Generating...': '생성 중...',
+        'GitHub: ydtg1993': 'GitHub: ydtg1993',
+        'ID:': 'ID:',
+        'Icon view': '아이콘 보기',
+        'Interval Type:': '간격 유형:',
+        'Interval Value:': '간격 값:',
+        'Jump to Directory': '디렉토리로 이동',
+        'Language changed. Restart now?': '언어가 변경되었습니다. 지금 다시 시작하시겠습니까?',
+        'Largest first': '큰 파일순',
+        'Last 30 Days': '최근 30일',
+        'Last 7 Days': '최근 7일',
+        'Last sync: ': '마지막 동기화: ',
+        'List view': '목록 보기',
+        'Local ID': '로컬 ID',
+        'Local folder:': '로컬 폴더:',
+        'Local path': '로컬 경로',
+        'Login code is wrong': '로그인 코드가 잘못되었습니다',
+        'Login error, please retry': '로그인 오류, 다시 시도해주세요',
+        'Login with phone number': '전화번호로 로그인',
+        'Max Files': '최대 파일 수',
+        'Max Single File Size': '최대 단일 파일 크기',
+        'Max Size (GB)': '최대 크기 (GB)',
+        'Maximum number of files per day': '하루 최대 파일 수',
+        'Maximum size of a single uploaded file': '단일 업로드 파일의 최대 크기',
+        'Maximum total upload size per day': '하루 최대 총 업로드 크기',
+        'Message ID': '메시지 ID',
+        'Move to': '이동',
+        'Move to...': '이동...',
+        'Name A-Z': '이름 A-Z',
+        'Name Z-A': '이름 Z-A',
+        'New folder placeholder': '폴더 이름 입력',
+        'Newest first': '최신순',
+        'No downloadable media in the message.': '메시지에 다운로드 가능한 미디어가 없습니다.',
+        'No files found': '파일을 찾을 수 없습니다',
+        'No results': '결과 없음',
+        'No sync folders configured.': '구성된 동기화 폴더가 없습니다.',
+        'No target directories available in the current channel.': '현재 채널에 사용 가능한 대상 디렉토리가 없습니다.',
+        'Not logged in': '로그인되지 않음',
+        'Number of times to retry a failed upload': '업로드 실패 시 재시도 횟수',
+        'Oldest first': '오래된순',
+        'Open Telegram App': 'Telegram 앱 열기',
+        'Open this channel': '이 채널 열기',
+        'Open this folder': '이 폴더 열기',
+        'Path': '경로',
+        'Pending...': '대기 중...',
+        'Please enter a keyword': '검색어를 입력해주세요',
+        'Please fill API ID and API Hash': 'API ID와 API Hash를 입력해주세요',
+        'Please fill all fields': '모든 필드를 입력해주세요',
+        'Please login first': '먼저 로그인해주세요',
+        'Please scan the QR code to log in': 'QR 코드를 스캔하여 로그인하세요',
+        'Point camera at the QR code above': '카메라를 위의 QR 코드에 비추세요',
+        'Preview': '미리보기',
+        'QR code expired. Click refresh': 'QR 코드가 만료되었습니다. 새로고침하세요',
+        'Restart Required': '재시작 필요',
+        'Restrict total upload volume per day': '하루 총 업로드량 제한',
+        'Root is an abstraction layer. Please select a folder to upload.': '루트는 추상화 계층입니다. 업로드할 폴더를 선택해주세요.',
+        'Save File': '파일 저장',
+        'Scan QR code with Telegram on your phone': '휴대폰 Telegram으로 QR 코드를 스캔하세요',
+        'Scanned! Please confirm on your phone': '스캔 완료! 휴대폰에서 확인해주세요',
+        'Search by Date': '날짜로 검색',
+        'Search files...': '파일 검색...',
+        'Search results': '검색 결과',
+        'Select Date Range': '날짜 범위 선택',
+        'Select Download Directory': '다운로드 디렉토리 선택',
+        'Select Files': '파일 선택',
+        'Select Folder': '폴더 선택',
+        'Select Save Directory': '저장 디렉토리 선택',
+        'Select target folder for {count} file(s):': '{count}개 파일의 대상 폴더를 선택하세요:',
+        'Settings saved': '설정이 저장되었습니다',
+        'Smallest first': '작은 파일순',
+        'Special thanks to the following open-source projects that make CraftCloud possible:': 'CraftCloud를 가능하게 한 다음 오픈소스 프로젝트에 특별한 감사를 드립니다:',
+        'Start Date:': '시작 날짜:',
+        'Start date cannot be later than end date.': '시작 날짜는 종료 날짜보다 늦을 수 없습니다',
+        'Sync Dashboard': '동기화 대시보드',
+        'Sync Folder': '동기화 폴더',
+        'Synced files': '동기화된 파일',
+        'Synced size': '동기화된 크기',
+        'TG Channel': 'TG 채널',
+        'CraftCloud - Running': 'CraftCloud - 실행 중',
+        'Telegram File ID': 'Telegram 파일 ID',
+        'Telethon not logged in': 'Telethon이 로그인되지 않았습니다',
+        'Today': '오늘',
+        'Total files': '전체 파일',
+        'Up': '위로',
+        'Upload Limit': '업로드 한도',
+        'Upload Retry Times': '업로드 재시도 횟수',
+        'Upload Time': '업로드 시간',
+        'Upload failed: No media in the message.': '업로드 실패: 메시지에 미디어가 없습니다.',
+        'Upload failed: No response from Telegram.': '업로드 실패: Telegram 응답이 없습니다.',
+        'Uploading': '업로드 중',
+        'Volume': '볼륨',
+        'Watched Folders': '감시 폴더',
+        'daily': '매일',
+        'hourly': '매시간',
+        'minutely': '매분',
+        '🌐 No VPN Needed — Direct connection to Telegram servers via MTProto protocol': '🌐 VPN 불필요 — MTProto 프로토콜을 통해 Telegram 서버에 직접 연결',
+        '📁 Directory Organization — Create folders and manage file hierarchy like a local disk': '📁 디렉토리 관리 — 로컬 디스크처럼 폴더를 만들고 파일 계층 관리',
+        '📱 QR Code Login — Quickly log in using your Telegram mobile app': '📱 QR 코드 로그인 — 휴대폰 Telegram 앱으로 빠르게 로그인',
+        '🔄 Auto Sync — Watch local folders and auto-upload changes to Telegram': '🔄 자동 동기화 — 로컬 폴더 변경 사항을 감시하고 Telegram에 자동 업로드',
+        '🔍 Full-Text Search — Search files by name or content with Chinese word segmentation': '🔍 전체 텍스트 검색 — 파일 이름 또는 내용으로 검색, 중국어 단어 분할 지원',
+        '🔒 Privacy — Files are stored in your personal Telegram channels, no third-party access': '🔒 개인정보 보호 — 파일은 개인 Telegram 채널에 저장, 제3자 접근 없음',
+        '🖥️ System Tray — Minimize to tray, continue syncing in the background': '🖥️ 시스템 트레이 — 트레이로 최소화, 백그라운드에서 동기화 계속',
+        '🚀 Unlimited Cloud Storage — Store files via Telegram channels, no capacity limits': '🚀 무제한 클라우드 스토리지 — Telegram 채널을 통해 파일 저장, 용량 제한 없음',
+    },
+}
+
+def main():
+    tree = ET.parse(BASE_TS)
+    root = tree.getroot()
+
+    for code, translations in TRANSLATIONS.items():
+        new_root = copy.deepcopy(root)
+        new_root.set('language', code)
+        new_context = new_root.find('context')
+
+        count = 0
+        for msg in new_context.findall('message'):
+            source_el = msg.find('source')
+            trans_el = msg.find('translation')
+            if source_el is None:
+                continue
+            source = source_el.text
+            if not source:
+                continue
+            # Step 1: Reset all translations to English source text (fallback)
+            if trans_el is not None:
+                trans_el.text = source
+            # Step 2: Overwrite with language-specific translation if available
+            if source in translations:
+                if trans_el is not None:
+                    trans_el.text = translations[source]
+                count += 1
+
+        out_ts = os.path.join(I18N_DIR, f'craft_cloud.{code}.ts')
+        out_qm = os.path.join(I18N_DIR, f'craft_cloud.{code}.qm')
+
+        tree_copy = ET.ElementTree(new_root)
+        tree_copy.write(out_ts, encoding='utf-8', xml_declaration=True)
+        print(f'TS created: {out_ts} ({count} translated)')
+
+        subprocess.run([LRELEASE, out_ts, '-qm', out_qm], check=True)
+        print(f'QM compiled: {out_qm}')
+
+    print('\nAll 4 languages done!')
+
+if __name__ == '__main__':
+    main()

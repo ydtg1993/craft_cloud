@@ -1,0 +1,50 @@
+# ── Binary files ──────────────────────────────────────────────────
+# Mark all binary file types to prevent CRLF/LF conversion
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.bmp       binary
+*.webp      binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.tar       binary
+*.7z        binary
+*.rar       binary
+*.exe       binary
+*.dll       binary
+*.so        binary
+*.pyd       binary
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
+*.mp3       binary
+*.mp4       binary
+*.avi       binary
+*.mov       binary
+
+# ── Text files with explicit LF handling ─────────────────────────
+# SVG is XML/text but should not be auto-converted
+*.svg       text eol=lf
+
+# Python source - force LF
+*.py        text eol=lf
+
+# Config/text files
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.toml      text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.json      text eol=lf
+*.txt       text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.js        text eol=lf
+*.qss       text eol=lf
+*.qrc       text eol=lf
+*.ui        text eol=lf

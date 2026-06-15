@@ -1,0 +1,42 @@
+# ── Virtual Environment ────────────────────────────────────────────
+venv/
+.venv/
+
+# ── Runtime Data ───────────────────────────────────────────────────
+data/*.db-shm
+data/*.db-wal
+data/cache/
+data/logs/
+sessions/
+
+# ── Legacy Runtime Artifacts (now moved to data/) ──────────────────
+app.log
+craftfiles.db
+craftfiles.db-shm
+craftfiles.db-wal
+config.json
+cache/
+logs/
+
+# ── Python ─────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# ── Build Artifacts ────────────────────────────────────────────────
+build/
+dist/
+installer_output/
+*.spec.bak
+
+# ── IDE ────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── OS ─────────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store

@@ -1,0 +1,23 @@
+telethon:
+  user_id: 1
+  logged_in: false
+download_path: C:/Users/pcuser/Desktop
+language: en
+theme: light
+view_mode: icon
+clipboard_enabled: true
+upload_retry_times: 3
+upload_limit_settings:
+  enabled: true
+  max_daily_size_gb: 200.0
+  max_daily_files: 800
+  max_single_file_size_gb: 1.8
+  reset_hour: 0
+auto_sync_settings:
+  enabled: true
+  folders:
+    C:/Users/pcuser/Desktop/同步文件夹:
+      interval_type: minutely
+      interval_value: 5
+      target_dir_id: 3
+      channel_name: 同步文件夹
