@@ -25,7 +25,7 @@ from core.translator import tr
 from view.task_queue_page import TaskQueuePage
 from view.about_page import AboutPage
 
-app_icon = QIcon(str(resource_path("tc.ico")))
+app_icon = QIcon(str(resource_path("cc.ico")))
 
 
 class MainWindow(FluentWindow):

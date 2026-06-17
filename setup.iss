@@ -7,7 +7,7 @@ OutputDir=.\installer_output
 OutputBaseFilename=CraftCloud_Setup
 Compression=lzma2
 SolidCompression=yes
-SetupIconFile=resources\tc.ico
+SetupIconFile=resources\cc.ico
 UninstallDisplayName=CraftCloud
 PrivilegesRequired=lowest
 

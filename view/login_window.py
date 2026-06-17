@@ -54,7 +54,7 @@ class LoginWindow(QDialog):
             self.setWindowIcon(QIcon(str(icon_path)))
         else:
             # 如果 tc.png 不存在，尝试 tc.ico
-            ico_path = resource_path("tc.ico")
+            ico_path = resource_path("cc.ico")
             if ico_path.exists():
                 self.setWindowIcon(QIcon(str(ico_path)))
             else:
@@ -74,7 +74,7 @@ class LoginWindow(QDialog):
         header_layout.setSpacing(10)
 
         self.logo_label = ImageLabel()
-        logo_path = resource_path("tc.png")
+        logo_path = resource_path("cc.png")
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path))
             self.logo_label.setPixmap(pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
