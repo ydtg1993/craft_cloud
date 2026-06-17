@@ -9,15 +9,6 @@
 
 ---
 
-###  [下载最新版](https://github.com/ydtg1993/craft_cloud/releases/download/v1.1.0/CraftCloud_Setup.exe)
-<p style="text-align: center;">
-<a href="https://github.com/ydtg1993/craft_cloud/releases/download/v1.1.0/CraftCloud_Setup.exe">
-<img width="180" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/resources/tc.png"/>
-</a>
-</p>
-
----
-
 ## 界面预览
 <table>
   <tr>
