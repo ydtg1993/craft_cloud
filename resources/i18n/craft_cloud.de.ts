@@ -212,6 +212,9 @@ Entsprechende Dateien auf Telegram werden ebenfalls bereinigt. Diese Aktion kann
     <message><source>Upload Limit</source><translation>Upload-Limit</translation></message>
     <message><source>Upload Retry Times</source><translation>Upload-Wiederholungen</translation></message>
     <message><source>Number of times to retry a failed upload</source><translation>Anzahl der Wiederholungen bei fehlgeschlagenem Upload</translation></message>
+    <message><source>Max Concurrent Uploads</source><translation>Maximale gleichzeitige Uploads</translation></message>
+    <message><source>Simultaneous upload operations (requires app restart)</source><translation>Gleichzeitige Upload-Vorgänge (erfordert App-Neustart)</translation></message>
+    <message><source>Max concurrent uploads changed. Restart now?</source><translation>Maximale gleichzeitige Uploads geändert. Jetzt neu starten?</translation></message>
     <message><source>Default Download Path</source><translation>Standard-Download-Pfad</translation></message>
     <message><source>Directory where downloaded files are saved</source><translation>Verzeichnis für heruntergeladene Dateien</translation></message>
     <message><source>Browse</source><translation>Durchsuchen</translation></message>

@@ -10,6 +10,7 @@ class TestAppConfig:
         assert config.theme == "dark"
         assert config.view_mode == "list"
         assert config.upload_retry_times == 3
+        assert config.max_concurrent_uploads == 1
 
     def test_telethon_defaults(self):
         config = AppConfig()

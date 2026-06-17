@@ -46,6 +46,7 @@ class AppConfig(BaseModel):
     view_mode: str = "icon"
     clipboard_enabled: bool = True
     upload_retry_times: int = 3
+    max_concurrent_uploads: int = 3
     upload_limit_settings: UploadLimitConfig = Field(default_factory=UploadLimitConfig)
     auto_sync_settings: AutoSyncConfig = Field(default_factory=AutoSyncConfig)
 

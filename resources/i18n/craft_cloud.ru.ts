@@ -212,6 +212,9 @@ Corresponding files on Telegram will also be cleaned up. This action cannot be u
     <message><source>Upload Limit</source><translation>Лимит загрузки</translation></message>
     <message><source>Upload Retry Times</source><translation>Повторы загрузки</translation></message>
     <message><source>Number of times to retry a failed upload</source><translation>Количество повторных попыток при сбое загрузки</translation></message>
+    <message><source>Max Concurrent Uploads</source><translation>Макс. одновременных загрузок</translation></message>
+    <message><source>Simultaneous upload operations (requires app restart)</source><translation>Одновременных операций загрузки (требуется перезапуск)</translation></message>
+    <message><source>Max concurrent uploads changed. Restart now?</source><translation>Макс. одновременных загрузок изменено. Перезапустить сейчас?</translation></message>
     <message><source>Default Download Path</source><translation>Путь скачивания по умолчанию</translation></message>
     <message><source>Directory where downloaded files are saved</source><translation>Папка для сохранения скачанных файлов</translation></message>
     <message><source>Browse</source><translation>Обзор</translation></message>

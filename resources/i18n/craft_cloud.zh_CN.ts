@@ -212,6 +212,9 @@ Corresponding files on Telegram will also be cleaned up. This action cannot be u
     <message><source>Upload Limit</source><translation>上传限制</translation></message>
     <message><source>Upload Retry Times</source><translation>上传重试次数</translation></message>
     <message><source>Number of times to retry a failed upload</source><translation>上传失败时的重试次数</translation></message>
+    <message><source>Max Concurrent Uploads</source><translation>最大并行上传数</translation></message>
+    <message><source>Simultaneous upload operations (requires app restart)</source><translation>同时上传操作数（需重启应用）</translation></message>
+    <message><source>Max concurrent uploads changed. Restart now?</source><translation>最大并行上传数已更改，是否重启应用？</translation></message>
     <message><source>Default Download Path</source><translation>默认下载路径</translation></message>
     <message><source>Directory where downloaded files are saved</source><translation>下载文件的保存目录</translation></message>
     <message><source>Browse</source><translation>浏览</translation></message>

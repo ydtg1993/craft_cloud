@@ -212,6 +212,9 @@ Les fichiers Telegram correspondants seront aussi nettoyés. Cette action est ir
     <message><source>Upload Limit</source><translation>Limite de téléversement</translation></message>
     <message><source>Upload Retry Times</source><translation>Tentatives de retéléversement</translation></message>
     <message><source>Number of times to retry a failed upload</source><translation>Nombre de tentatives après échec</translation></message>
+    <message><source>Max Concurrent Uploads</source><translation>Téléversements simultanés max</translation></message>
+    <message><source>Simultaneous upload operations (requires app restart)</source><translation>Opérations de téléversement simultanées (redémarrage requis)</translation></message>
+    <message><source>Max concurrent uploads changed. Restart now?</source><translation>Téléversements simultanés max modifiés. Redémarrer maintenant ?</translation></message>
     <message><source>Default Download Path</source><translation>Chemin de téléchargement par défaut</translation></message>
     <message><source>Directory where downloaded files are saved</source><translation>Dossier où les fichiers téléchargés sont enregistrés</translation></message>
     <message><source>Browse</source><translation>Parcourir</translation></message>

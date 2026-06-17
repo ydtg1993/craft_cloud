@@ -525,6 +525,22 @@ class SettingsPage(QWidget):
             retry_widget,
         )
 
+        # 最大并行上传数
+        concurrent_widget = QWidget()
+        concurrent_layout = QHBoxLayout(concurrent_widget)
+        concurrent_layout.setContentsMargins(0, 0, 0, 0)
+        self.concurrent_spin = SpinBox()
+        self.concurrent_spin.setRange(1, 10)
+        self.concurrent_spin.setValue(self.config.get("max_concurrent_uploads", 3))
+        concurrent_layout.addWidget(self.concurrent_spin)
+        concurrent_layout.addStretch()
+        card.addGroup(
+            FluentIcon.SEND_FILL,
+            self.tr("Max Concurrent Uploads"),
+            self.tr("Simultaneous upload operations (requires app restart)"),
+            concurrent_widget,
+        )
+
         # 默认下载路径
         dl_widget = QWidget()
         dl_layout = QHBoxLayout(dl_widget)
@@ -737,6 +753,9 @@ class SettingsPage(QWidget):
 
     def _save(self):
         self.config["upload_retry_times"] = self.retry_spin.value()
+        old_concurrent = self.config.get("max_concurrent_uploads", 1)
+        new_concurrent = self.concurrent_spin.value()
+        self.config["max_concurrent_uploads"] = new_concurrent
         self.config["download_path"] = self.dl_path_edit.text()
         self.config["upload_limit_settings"] = {
             "enabled": self.limit_enabled.isChecked(),
@@ -754,3 +773,11 @@ class SettingsPage(QWidget):
         InfoBar.success(
             self.tr("Success"), self.tr("Settings saved"), parent=self.window()
         )
+        if new_concurrent != old_concurrent:
+            msg_box = MessageBox(
+                self.tr("Restart Required"),
+                self.tr("Max concurrent uploads changed. Restart now?"),
+                self,
+            )
+            if msg_box.exec():
+                self._restart_app()

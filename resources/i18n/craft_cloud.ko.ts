@@ -212,6 +212,9 @@ Telegram의 해당 파일도 함께 정리됩니다. 이 작업은 취소할 수
     <message><source>Upload Limit</source><translation>업로드 한도</translation></message>
     <message><source>Upload Retry Times</source><translation>업로드 재시도 횟수</translation></message>
     <message><source>Number of times to retry a failed upload</source><translation>업로드 실패 시 재시도 횟수</translation></message>
+    <message><source>Max Concurrent Uploads</source><translation>최대 동시 업로드</translation></message>
+    <message><source>Simultaneous upload operations (requires app restart)</source><translation>동시 업로드 작업 수 (앱 재시작 필요)</translation></message>
+    <message><source>Max concurrent uploads changed. Restart now?</source><translation>최대 동시 업로드가 변경되었습니다. 지금 다시 시작할까요?</translation></message>
     <message><source>Default Download Path</source><translation>기본 다운로드 경로</translation></message>
     <message><source>Directory where downloaded files are saved</source><translation>다운로드 파일이 저장되는 디렉토리</translation></message>
     <message><source>Browse</source><translation>찾아보기</translation></message>
