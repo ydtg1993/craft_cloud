@@ -143,11 +143,11 @@ class HomePage(QWidget):
         self.status_label_download.setObjectName("statusDownload")
         status_layout.addWidget(self.status_label_download)
 
-        self.status_label_today_size = QLabel(self.tr("Today: -- / --"))
+        self.status_label_today_size = QLabel(self.tr("Today upload: -- / --"))
         self.status_label_today_size.setObjectName("statusTodaySize")
         status_layout.addWidget(self.status_label_today_size)
 
-        self.status_label_today_count = QLabel(self.tr("Files: -- / --"))
+        self.status_label_today_count = QLabel(self.tr("File count: -- / --"))
         self.status_label_today_count.setObjectName("statusTodayCount")
         status_layout.addWidget(self.status_label_today_count)
         status_layout.addStretch()

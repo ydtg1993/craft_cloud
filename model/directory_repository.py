@@ -269,15 +269,11 @@ class DirectoryRepository:
                 # 收集所有子孙目录ID（含自身）
                 descendant_ids = self._collect_descendant_ids(root.id, session)
 
-                # 聚合查询
+                # 聚合查询 — synced_files 来自 File 表（已上传文件数），
+                # total_size / synced_size 也来自 File 表
                 agg = session.execute(
                     select(
-                        func.count(File.id).label("total_files"),
-                        func.coalesce(
-                            func.sum(
-                                case((File.is_sync == 1, 1), else_=0)
-                            ), 0
-                        ).label("synced_files"),
+                        func.count(File.id).label("synced_files"),
                         func.coalesce(func.sum(File.file_size), 0).label("total_size"),
                         func.coalesce(
                             func.sum(
@@ -287,8 +283,12 @@ class DirectoryRepository:
                     ).where(File.directory_id.in_(descendant_ids))
                 ).one()
 
-                # 同步状态
+                # total_files 从 AutoSyncStatus 读取（由 sync task 在开始时
+                # 统计磁盘文件总数），避免与 File 表记录数混淆。
+                # synced_files 从 File 表获取实际已上传文件数，反映真实同步进度。
                 status_row = session.get(AutoSyncStatus, folder_path)
+                total_files = status_row.total_files if status_row else 0
+                synced_files = agg.synced_files
 
                 # dir_name 优先取本地文件夹名，更直观（DB中可能是"Saved Messages"等通用名）
                 display_name = Path(folder_path).name if folder_path else root.name
@@ -299,8 +299,8 @@ class DirectoryRepository:
                     local_path=folder_path,
                     channel_id=root.channel_id,
                     channel_name=root.name,
-                    total_files=agg.total_files,
-                    synced_files=agg.synced_files,
+                    total_files=total_files,
+                    synced_files=synced_files,
                     total_size=agg.total_size,
                     synced_size=agg.synced_size,
                     status=status_row.status if status_row else SYNC_PENDING,

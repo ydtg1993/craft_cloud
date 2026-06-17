@@ -42,6 +42,18 @@ class DirectorySyncTask(BaseSyncTask):
             self.signals.completed.emit(0)
             return
 
+        # 统计本地文件总数（用于进度显示）
+        total_files = len(local_structure["files"])
+        self.db.sync_status.upsert_sync_folder_status(
+            self.folder_path,
+            total_files=total_files,
+            synced_files=0,
+            status=SYNC_PENDING,
+            error_message=None,
+            _bg=True,
+        )
+        self.signals.progress.emit(0, total_files)
+
         # 2. 获取数据库中的当前结构
         db_structure = self._get_db_structure(target_dir_id)
 
@@ -56,8 +68,13 @@ class DirectorySyncTask(BaseSyncTask):
             )
             self.signals.cancelled.emit()
         else:
+            synced_count = len(local_structure["files"])
             self.db.sync_status.upsert_sync_folder_status(
-                self.folder_path, status=SYNC_SUCCESS, _bg=True
+                self.folder_path,
+                synced_files=synced_count,
+                total_files=synced_count,
+                status=SYNC_SUCCESS,
+                _bg=True,
             )
             self.signals.completed.emit(sync_result["total_changes"])
 
