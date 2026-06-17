@@ -2,6 +2,7 @@
 
 通过 Qt Signal 与 UI 通信，不直接使用 QFileDialog/QMessageBox。
 """
+import time
 from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 from core.task_types import Task
@@ -120,13 +121,19 @@ class UploadManager(QObject):
                 dir_name = self._get_dir_name(dir_id)
 
                 last_pct = -1
+                last_emit_time = 0.0   # 时间节流：至少间隔 200ms
                 def upload_progress(current, total):
-                    nonlocal last_pct
+                    nonlocal last_pct, last_emit_time
                     if total:
                         pct = int(current * 100 / total)
-                        if pct != last_pct:
+                        now = time.monotonic()
+                        # 节流：百分比未变 且 距上次发射不足 200ms 则跳过
+                        if pct == last_pct and (now - last_emit_time) < 0.2:
+                            return
+                        if pct != last_pct or (now - last_emit_time) >= 0.2:
                             signals.progress.emit(_task_id, pct)
                             last_pct = pct
+                            last_emit_time = now
 
                 file_id, msg_id, real_chat_id = await uploader.upload(
                     chat_id, fp, db=self.db, dir_id=dir_id, dir_name=dir_name,
