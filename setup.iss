@@ -17,6 +17,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "dist\CraftCloud\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+Type: files; Name: "{app}\sessions\my_account.session"
+Type: files; Name: "{app}\sessions\my_account.session-wal"
+Type: files; Name: "{app}\sessions\my_account.session-shm"
+
 [Tasks]
 Name: "startup"; Description: "Start CraftCloud on system startup"; GroupDescription: "System startup"; Flags: checkedonce
 
@@ -24,7 +29,7 @@ Name: "startup"; Description: "Start CraftCloud on system startup"; GroupDescrip
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CraftCloud"; ValueData: "{app}\CraftCloud.exe"; Flags: uninsdeletevalue
 
 [Icons]
-Name: "{commondesktop}\CraftCloud"; Filename: "{app}\CraftCloud.exe"
+Name: "{userdesktop}\CraftCloud"; Filename: "{app}\CraftCloud.exe"
 Name: "{group}\CraftCloud"; Filename: "{app}\CraftCloud.exe"
 Name: "{group}\Uninstall CraftCloud"; Filename: "{uninstallexe}"
 
