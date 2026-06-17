@@ -91,6 +91,23 @@ class TelethonUploader:
         self.api_id = api_id
         self.api_hash = api_hash
 
+    @staticmethod
+    async def _set_channel_photo(client, chat_id):
+        """为频道设置头像（非关键路径，失败静默忽略）。"""
+        try:
+            avatar_path = resource_path("cc.png")
+            if not avatar_path.exists():
+                logger.warning(f"[Upload] 头像文件不存在: {avatar_path}")
+                return
+            from telethon.tl.types import InputChatUploadedPhoto
+            uploaded = await client.upload_file(str(avatar_path))
+            await client(EditPhotoRequest(
+                channel=await client.get_input_entity(chat_id),
+                photo=InputChatUploadedPhoto(uploaded),
+            ))
+        except Exception as e:
+            logger.warning(f"[Upload] 设置频道头像失败 (channel={chat_id}): {e}")
+
     async def ensure_channel(self, client, dir_name, dir_id, db):
         # 1. 向上查找到根级父目录（异步执行 DB 查询，避免阻塞事件循环）
         top_dir_id = dir_id
@@ -127,6 +144,8 @@ class TelethonUploader:
                     return existing
                 from telethon.tl.types import PeerChannel
                 await client.get_entity(PeerChannel(cache_key))
+                # 频道有效 → 补充设置头像（非阻塞，失败静默）
+                await self._set_channel_photo(client, existing)
                 return existing
             except (ValueError, RPCError):
                 logger.warning(f"[Upload] 频道 {existing} 无效，将重新创建")
@@ -149,6 +168,8 @@ class TelethonUploader:
                         return existing
                     from telethon.tl.types import PeerChannel
                     await client.get_entity(PeerChannel(cache_key))
+                    # 频道有效 → 补充设置头像
+                    await self._set_channel_photo(client, existing)
                     return existing
                 except (ValueError, RPCError):
                     _invalidate_entity_cache(existing)
@@ -173,19 +194,7 @@ class TelethonUploader:
             logger.info(f"[Upload] 已为新目录创建频道: {chat_id} ({chat_title})")
 
         # 4. 设置头像（锁外执行，非关键路径）
-        try:
-            avatar_path = resource_path("tc.png")
-            if avatar_path.exists():
-                from telethon.tl.types import InputChatUploadedPhoto
-                uploaded = await client.upload_file(str(avatar_path))
-                await client(EditPhotoRequest(
-                    channel=await client.get_input_entity(chat_id),
-                    photo=InputChatUploadedPhoto(uploaded),
-                ))
-            else:
-                logger.warning(f"[Upload] 头像文件不存在: {avatar_path}")
-        except Exception as e:
-            logger.warning(f"[Upload] 设置频道头像失败: {e}")
+        await self._set_channel_photo(client, chat_id)
         return chat_id
 
     async def upload(self, chat_id, file_path, db=None, dir_id=None, dir_name=None,

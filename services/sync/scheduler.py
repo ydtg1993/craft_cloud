@@ -302,7 +302,8 @@ class SyncScheduler(QObject):
         ))
         task.signals.cancelled.connect(lambda: (
             logger.warning(f"[SyncScheduler] 任务被取消: {folder_path}"),
-            self.sync_status.emit(folder_path, tr("Cancelled"))
+            self.sync_status.emit(folder_path, tr("Cancelled")),
+            self.sync_completed.emit(folder_path, 0),
         ))
         task.signals.finished.connect(self._on_task_finished)
         self._current_task = task

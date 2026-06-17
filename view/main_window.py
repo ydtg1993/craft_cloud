@@ -30,6 +30,8 @@ app_icon = QIcon(str(resource_path("cc.ico")))
 
 class MainWindow(FluentWindow):
     logout_requested = Signal()
+    # 跨线程 InfoBar：worker 线程通过此信号将 UI 操作 marshall 到主线程
+    _show_info_bar = Signal(str, str, str)  # bar_type, title, message
 
     def __init__(self, config_manager: ConfigManager):
         super().__init__()
@@ -40,6 +42,9 @@ class MainWindow(FluentWindow):
         self._current_preview = None
         self._total_downloaded_bytes = 0
         self._dl_task_sizes: dict[str, int] = {}  # task_id → file_size bytes
+
+        # 连接跨线程 InfoBar 信号
+        self._show_info_bar.connect(self._on_show_info_bar)
 
         # ---- 初始化 TaskManager（统一调度所有 TG 操作） ----
         creds = self.db.users.get_active_credentials()
@@ -301,6 +306,8 @@ class MainWindow(FluentWindow):
         from core.telegram_uploader import TelethonUploader
 
         db = self.db
+        # 在主线程预计算 i18n 字符串
+        err_title = tr("Channel creation failed")
 
         async def _create(client):
             uploader = TelethonUploader(creds["api_id"], creds["api_hash"])
@@ -311,12 +318,7 @@ class MainWindow(FluentWindow):
 
         def on_error(err):
             logger.error(f"[MainWindow] 频道创建失败: {folder_name} -> {err}")
-            InfoBar.error(
-                tr("Channel creation failed"),
-                f"{folder_name}: {err}",
-                position=InfoBarPosition.BOTTOM_RIGHT,
-                parent=self,
-            )
+            self._show_info_bar.emit("error", err_title, f"{folder_name}: {err}")
 
         self.task_manager.run_on_client(_create, on_result, on_error)
 
@@ -561,6 +563,15 @@ class MainWindow(FluentWindow):
         self._current_preview = view
         view.show_centered(self)
 
+    def _on_show_info_bar(self, bar_type: str, title: str, message: str):
+        """跨线程槽：在 UI 线程上显示 InfoBar。"""
+        if bar_type == "success":
+            InfoBar.success(title, message, position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
+        elif bar_type == "warning":
+            InfoBar.warning(title, message, position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
+        elif bar_type == "error":
+            InfoBar.error(title, message, position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
+
     def _on_session_expired(self, reason: str):
         """Session 失效回调 — 由 TgWorker 在检测到 UnauthorizedError 时触发。
 
@@ -662,6 +673,9 @@ class MainWindow(FluentWindow):
         self.sync_ctrl.stop_sync()
         self.showNormal()
         self.activateWindow()
+        # 从托盘恢复后刷新 UI：同步过程中 DB 已更新，但页面仍是旧数据
+        self._refresh_sync_page()
+        self._refresh_current_directory()
 
     def _real_exit(self):
         if hasattr(self, 'tray_icon') and self.tray_icon:

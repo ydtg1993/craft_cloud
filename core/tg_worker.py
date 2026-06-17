@@ -141,7 +141,10 @@ class TgWorkerThread(QObject):
     async def _connect_client(self):
         """Create and connect the single shared Telethon client.
 
-        连接成功后启动两个后台 watchdog：
+        连接后立即调用 get_me() 验证 session 有效性，避免过期 session
+        在用户操作时才暴露（表现为"一用就登出"）。
+
+        验证通过后启动两个后台 watchdog：
         1. _watch_disconnect — 监控 client.disconnected Future
         2. _watchdog_health — 定期调用 get_me() 检测 session 是否仍然有效
         """
@@ -153,7 +156,13 @@ class TgWorkerThread(QObject):
             session_path, self._api_id, self._api_hash
         )
         await self._client.connect()
-        logger.info(f"[TgWorker] Client connected, session={session_path}")
+
+        # 立即验证 session 有效性（connect() 只打开文件，不做 API 调用）
+        me = await self._client.get_me()
+        logger.info(
+            f"[TgWorker] Client connected and verified, "
+            f"user=@{getattr(me, 'username', '?')}, session={session_path}"
+        )
 
         # 启动两个后台 watchdog task
         self._disconnect_watcher = self._loop.create_task(
@@ -195,9 +204,7 @@ class TgWorkerThread(QObject):
                 await asyncio.sleep(2)
                 try:
                     await self._reconnect_client()
-                    self._disconnect_watcher = self._loop.create_task(
-                        self._watch_disconnect(), name="tg-watch-disconnect"
-                    )
+                    # watchdog 任务已在 _reconnect_client() 中重新创建，无需重复注册
                 except Exception as e:
                     logger.error(f"[TgWorker] 重连失败: {e}")
                     if self._running:
@@ -383,7 +390,20 @@ class TgWorkerThread(QObject):
 
         Explicitly closes the SQLite session so the file is fully released
         before a sync task opens its own client on the same session file.
+
+        Also cancels _watch_disconnect and _watchdog_health background tasks
+        to prevent them from auto-reconnecting while the sync task owns the
+        session file (which would cause "database is locked" and a spurious
+        session_expired signal).
         """
+        # 1. 取消后台 watchdog 任务，防止它们在断开后自动重连
+        for attr in ('_disconnect_watcher', '_health_watcher'):
+            task = getattr(self, attr, None)
+            if task is not None and not task.done():
+                task.cancel()
+            setattr(self, attr, None)
+
+        # 2. 断开客户端并释放 session 文件
         if self._client is not None:
             try:
                 await self._client.disconnect()
@@ -397,7 +417,11 @@ class TgWorkerThread(QObject):
             self._client = None
 
     async def _reconnect_client(self):
-        """Async: recreate and reconnect the shared Telethon client."""
+        """Async: recreate and reconnect the shared Telethon client.
+
+        重连后调用 get_me() 验证 session 仍然有效。
+        同时重新启动 _watch_disconnect 和 _watchdog_health 后台任务。
+        """
         from core.tg_client import ensure_session_wal
         from core.utils import get_sessions_dir
         ensure_session_wal()
@@ -406,7 +430,17 @@ class TgWorkerThread(QObject):
             session_path, self._api_id, self._api_hash
         )
         await self._client.connect()
-        logger.debug("[TgWorker] Client reconnected")
+        # 验证重连后的 session 有效性
+        await self._client.get_me()
+        logger.debug("[TgWorker] Client reconnected and verified")
+
+        # 重新启动后台 watchdog 任务
+        self._disconnect_watcher = self._loop.create_task(
+            self._watch_disconnect(), name="tg-watch-disconnect"
+        )
+        self._health_watcher = self._loop.create_task(
+            self._watchdog_health(), name="tg-watch-health"
+        )
 
     # ── Internal: task runner ──────────────────────────────────────
 

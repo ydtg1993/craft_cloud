@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget, QFileDialog,
                                QListWidgetItem, QApplication, QStackedWidget, QLabel)
-from PySide6.QtCore import Qt, QProcess, Signal, QSize, QRect
+from PySide6.QtCore import Qt, QProcess, Signal, QSize, QRect, QTimer
 from PySide6.QtGui import QColor
 from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, PushButton, LineEdit,
                             SwitchButton, SpinBox, DoubleSpinBox, Slider, ListWidget, InfoBar,
@@ -225,6 +225,9 @@ class SyncFolderListSettingCard(ExpandSettingCard):
 
         db = self.db
         folder_name = channel_name  # 闭包捕获
+        # 在主线程预计算 i18n 字符串
+        err_title = self.tr("Channel creation failed")
+        folder_display = Path(folder_path).name
 
         async def _create(client):
             uploader = TelethonUploader(creds["api_id"], creds["api_hash"])
@@ -235,11 +238,7 @@ class SyncFolderListSettingCard(ExpandSettingCard):
 
         def on_error(err):
             logger.error(f"[SettingsPage] 频道创建失败: {folder_path} -> {err}")
-            InfoBar.error(
-                self.tr("Channel creation failed"),
-                f"{Path(folder_path).name}: {err}",
-                parent=self.window(),
-            )
+            self._show_info_bar.emit("error", err_title, f"{folder_display}: {err}")
 
         self.task_manager.run_on_client(_create, on_result, on_error)
 
@@ -320,122 +319,40 @@ class SyncFolderListSettingCard(ExpandSettingCard):
     # ---- 删除文件夹 ----
 
     def _onRemoveItem(self, item: SyncFolderItem):
+        """移除监视文件夹配置。仅停止同步，不删除 TG 频道和本地数据库。"""
         name = Path(item.folder_path).name
-        # 第一步：确认删除配置
-        title = self.tr("Confirm deletion")
+        title = self.tr("Stop watching")
         content = (
-            self.tr('Remove sync configuration for "') + name
-            + self.tr('"?\n\nThis will NOT delete your local files.')
+            self.tr('Stop watching "') + name
+            + self.tr('"?\n\nYour local files and Telegram channel will NOT be deleted.\n'
+                      'You can re-add this folder to resume syncing.')
         )
         dlg = Dialog(title, content, self.window())
-        dlg.yesSignal.connect(lambda: self._confirmChannelDeletion(item))
+        dlg.yesButton.setText(self.tr("Stop watching"))
+        dlg.cancelButton.setText(self.tr("Cancel"))
+        # 延迟到事件循环下一轮执行，避免在 Dialog 窗口销毁过程中
+        # 修改 widget 树导致 "QWidgetWindow must be a top level window" 警告
+        dlg.yesSignal.connect(lambda: QTimer.singleShot(0, lambda: self._removeFolder(item)))
         dlg.exec()
 
-    def _confirmChannelDeletion(self, item: SyncFolderItem):
-        """询问用户是否同时删除 TG 频道。"""
-        cfg = (
-            self.config.get("auto_sync_settings", {})
-            .get("folders", {})
-            .get(item.folder_path, {})
-        )
-        dir_id = cfg.get("target_dir_id", 0)
-        # 检查是否有有效的频道可以删除
-        has_channel = False
-        if dir_id and self.db:
-            channel_id = self.db.dirs.get_directory_channel(dir_id)
-            has_channel = bool(channel_id and channel_id != "me")
-
-        if not has_channel:
-            # 没有频道，直接删除配置
-            self._removeFolder(item, delete_channel=False)
-            return
-
-        name = Path(item.folder_path).name
-        title = self.tr("Delete Telegram channel?")
-        content = (
-            self.tr('Also delete the Telegram channel for "') + name
-            + self.tr('"?\n\nFiles already uploaded to this channel will become inaccessible.')
-        )
-        dlg = Dialog(title, content, self.window())
-        dlg.yesSignal.connect(lambda: self._removeFolder(item, delete_channel=True))
-        dlg.cancelSignal.connect(lambda: self._removeFolder(item, delete_channel=False))
-        dlg.exec()
-
-    def _removeFolder(self, item: SyncFolderItem, delete_channel: bool = False):
-        """删除同步文件夹配置，可选删除 TG 频道和数据库记录。"""
-        cfg = (
-            self.config.get("auto_sync_settings", {})
-            .get("folders", {})
-            .get(item.folder_path, {})
-        )
-        dir_id = cfg.get("target_dir_id", 0)
-
+    def _removeFolder(self, item: SyncFolderItem):
+        """移除同步文件夹配置（仅移除 config 和 UI，保留 TG 频道和数据库记录）。"""
         # 1. 从配置中移除
         folders = self.config.get("auto_sync_settings", {}).get("folders", {})
         if item.folder_path in folders:
             del folders[item.folder_path]
             self.config_manager.save()
 
-        # 2. 清理同步状态
+        # 2. 清理同步状态记录
         if self.db:
             self.db.sync_status.delete_sync_folder_status(item.folder_path)
 
-        # 3. 可选：删除 TG 频道和数据库目录记录
-        if delete_channel and dir_id and self.db and self.task_manager:
-            self._delete_channel_and_dir(dir_id, Path(item.folder_path).name)
-
-        # 4. 移除 UI
+        # 3. 移除 UI
         self.viewLayout.removeWidget(item)
         item.deleteLater()
         self._adjustViewSize()
         self.folderChanged.emit()
-
-    def _delete_channel_and_dir(self, dir_id: int, folder_name: str):
-        """异步删除 TG 频道和本地目录记录。"""
-        creds = self.db.users.get_active_credentials()
-        if not creds:
-            logger.warning(f"[SettingsPage] 无活跃用户凭证，仅删除本地记录: dir_id={dir_id}")
-            self.db.dirs.delete_directory_recursive(dir_id)
-            return
-
-        db = self.db
-
-        async def _delete(client):
-            from telethon.tl.functions.channels import DeleteChannelRequest
-            channel_id = db.dirs.get_directory_channel(dir_id)
-            if channel_id and channel_id != "me":
-                try:
-                    from telethon.tl.types import PeerChannel
-                    entity = await client.get_input_entity(PeerChannel(int(channel_id)))
-                    await client(DeleteChannelRequest(channel=entity))
-                    logger.info(f"[SettingsPage] TG 频道已删除: {channel_id}")
-                except Exception as e:
-                    logger.warning(f"[SettingsPage] 删除 TG 频道失败: {e}")
-            # 无论 TG 删除成功与否，都清理本地数据库
-            db.dirs.delete_directory_recursive(dir_id)
-
-        def on_result(_):
-            logger.info(f"[SettingsPage] 同步文件夹已完全删除: {folder_name}")
-            InfoBar.success(
-                self.tr("Deleted"),
-                self.tr('Sync folder "{}" and its channel have been deleted.').format(folder_name),
-                parent=self.window(),
-            )
-
-        def on_error(err):
-            logger.error(f"[SettingsPage] 删除频道失败: {err}")
-            # 即使 TG 操作失败，也清理本地数据
-            try:
-                db.dirs.delete_directory_recursive(dir_id)
-            except Exception:
-                pass
-            InfoBar.warning(
-                self.tr("Partially deleted"),
-                self.tr('Channel deletion failed, but local config has been removed.'),
-                parent=self.window(),
-            )
-
-        self.task_manager.run_on_client(_delete, on_result, on_error)
+        logger.info(f"[SettingsPage] 已停止监视: {item.folder_path}")
 
     def reload(self):
         """重新加载文件夹列表（外部调用）"""
@@ -459,6 +376,9 @@ class SyncFolderListSettingCard(ExpandSettingCard):
 class SettingsPage(QWidget):
     """设置页：SegmentedWidget 切换模块 + GroupHeaderCardWidget 组织配置项"""
 
+    # 跨线程 InfoBar：worker 线程通过此信号将 UI 操作 marshall 到主线程
+    _show_info_bar = Signal(str, str, str)  # bar_type, title, message
+
     def __init__(self, config_manager: ConfigManager, db, task_manager=None, parent=None):
         super().__init__(parent)
         self.setObjectName("SettingsPage")
@@ -466,6 +386,9 @@ class SettingsPage(QWidget):
         self.config = config_manager.config
         self.db = db
         self.task_manager = task_manager
+
+        # 连接跨线程 InfoBar 信号
+        self._show_info_bar.connect(self._on_show_info_bar)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(36, 24, 36, 24)
@@ -748,6 +671,15 @@ class SettingsPage(QWidget):
     def _restart_app():
         QProcess.startDetached(sys.executable, sys.argv)
         QApplication.quit()
+
+    def _on_show_info_bar(self, bar_type: str, title: str, message: str):
+        """跨线程槽：在 UI 线程上显示 InfoBar。"""
+        if bar_type == "success":
+            InfoBar.success(title, message, parent=self.window())
+        elif bar_type == "warning":
+            InfoBar.warning(title, message, parent=self.window())
+        elif bar_type == "error":
+            InfoBar.error(title, message, parent=self.window())
 
     # ==================== 保存 ====================
 
