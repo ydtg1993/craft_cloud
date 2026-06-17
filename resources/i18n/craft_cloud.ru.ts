@@ -243,24 +243,14 @@ Corresponding files on Telegram will also be cleaned up. This action cannot be u
     <message><source>Channel Name:</source><translation>Имя канала:</translation></message>
     <message><source>Add folder</source><translation>Добавить папку</translation></message>
     <message><source>Channel creation failed</source><translation>Не удалось создать канал</translation></message>
-    <message><source>Confirm deletion</source><translation>Подтвердите удаление</translation></message>
-    <message><source>Remove sync configuration for "</source><translation>Remove sync configuration for "</translation></message>
-    <message><source>"?
+    <message><source>Stop watching</source><translation>Остановить наблюдение</translation></message>
+    <message><source>Stop watching &quot;{name}&quot;?
 
-This will NOT delete your local files.</source><translation>"?
+Your local files and Telegram channel will NOT be deleted.
+You can re-add this folder to resume syncing.</source><translation>Остановить наблюдение за &quot;{name}&quot;?
 
-This will NOT delete your local files.</translation></message>
-    <message><source>Delete Telegram channel?</source><translation>Удалить канал Telegram?</translation></message>
-    <message><source>Also delete the Telegram channel for "</source><translation>Also delete the Telegram channel for "</translation></message>
-    <message><source>"?
-
-Files already uploaded to this channel will become inaccessible.</source><translation>"?
-
-Files already uploaded to this channel will become inaccessible.</translation></message>
-    <message><source>Deleted</source><translation>Удалено</translation></message>
-    <message><source>Sync folder "{}" and its channel have been deleted.</source><translation>Папка синхронизации «{}» и её канал удалены.</translation></message>
-    <message><source>Partially deleted</source><translation>Частично удалено</translation></message>
-    <message><source>Channel deletion failed, but local config has been removed.</source><translation>Не удалось удалить канал, но локальная конфигурация удалена.</translation></message>
+Ваши локальные файлы и канал Telegram НЕ будут удалены.
+Вы можете снова добавить эту папку в любое время для возобновления синхронизации.</translation></message>
     <message><source>minutely</source><translation>ежеминутно</translation></message>
     <message><source>hourly</source><translation>ежечасно</translation></message>
     <message><source>daily</source><translation>ежедневно</translation></message>

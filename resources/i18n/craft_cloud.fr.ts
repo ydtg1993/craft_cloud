@@ -243,24 +243,14 @@ Les fichiers Telegram correspondants seront aussi nettoyés. Cette action est ir
     <message><source>Channel Name:</source><translation>Nom du canal :</translation></message>
     <message><source>Add folder</source><translation>Ajouter un dossier</translation></message>
     <message><source>Channel creation failed</source><translation>Échec de la création du canal</translation></message>
-    <message><source>Confirm deletion</source><translation>Confirmer la suppression</translation></message>
-    <message><source>Remove sync configuration for "</source><translation>Remove sync configuration for "</translation></message>
-    <message><source>"?
+    <message><source>Stop watching</source><translation>Arrêter la surveillance</translation></message>
+    <message><source>Stop watching &quot;{name}&quot;?
 
-This will NOT delete your local files.</source><translation>"?
+Your local files and Telegram channel will NOT be deleted.
+You can re-add this folder to resume syncing.</source><translation>Arrêter la surveillance de &quot;{name}&quot; ?
 
-This will NOT delete your local files.</translation></message>
-    <message><source>Delete Telegram channel?</source><translation>Supprimer le canal Telegram ?</translation></message>
-    <message><source>Also delete the Telegram channel for "</source><translation>Also delete the Telegram channel for "</translation></message>
-    <message><source>"?
-
-Files already uploaded to this channel will become inaccessible.</source><translation>"?
-
-Files already uploaded to this channel will become inaccessible.</translation></message>
-    <message><source>Deleted</source><translation>Supprimé</translation></message>
-    <message><source>Sync folder "{}" and its channel have been deleted.</source><translation>Le dossier de synchronisation « {} » et son canal ont été supprimés.</translation></message>
-    <message><source>Partially deleted</source><translation>Partiellement supprimé</translation></message>
-    <message><source>Channel deletion failed, but local config has been removed.</source><translation>Échec de suppression du canal, mais la configuration locale a été retirée.</translation></message>
+Vos fichiers locaux et le canal Telegram ne seront PAS supprimés.
+Vous pouvez réajouter ce dossier à tout moment pour reprendre la synchronisation.</translation></message>
     <message><source>minutely</source><translation>chaque minute</translation></message>
     <message><source>hourly</source><translation>chaque heure</translation></message>
     <message><source>daily</source><translation>chaque jour</translation></message>

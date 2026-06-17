@@ -243,24 +243,14 @@ Corresponding files on Telegram will also be cleaned up. This action cannot be u
     <message><source>Channel Name:</source><translation>频道名称:</translation></message>
     <message><source>Add folder</source><translation>添加文件夹</translation></message>
     <message><source>Channel creation failed</source><translation>频道创建失败</translation></message>
-    <message><source>Confirm deletion</source><translation>确认删除</translation></message>
-    <message><source>Remove sync configuration for "</source><translation>移除同步配置 "</translation></message>
-    <message><source>"?
+    <message><source>Stop watching</source><translation>停止监视</translation></message>
+    <message><source>Stop watching &quot;{name}&quot;?
 
-This will NOT delete your local files.</source><translation>"？
+Your local files and Telegram channel will NOT be deleted.
+You can re-add this folder to resume syncing.</source><translation>停止监视 "{name}"？
 
-此操作不会删除您的本地文件。</translation></message>
-    <message><source>Delete Telegram channel?</source><translation>删除 Telegram 频道？</translation></message>
-    <message><source>Also delete the Telegram channel for "</source><translation>同时删除 "</translation></message>
-    <message><source>"?
-
-Files already uploaded to this channel will become inaccessible.</source><translation>" 的 Telegram 频道？
-
-已上传到此频道的文件将无法访问。</translation></message>
-    <message><source>Deleted</source><translation>已删除</translation></message>
-    <message><source>Sync folder "{}" and its channel have been deleted.</source><translation>同步文件夹 "{}" 及其频道已删除。</translation></message>
-    <message><source>Partially deleted</source><translation>部分删除</translation></message>
-    <message><source>Channel deletion failed, but local config has been removed.</source><translation>频道删除失败，但本地配置已移除。</translation></message>
+本地文件和 Telegram 频道将不会被删除。
+可随时重新添加此文件夹恢复同步。</translation></message>
     <message><source>minutely</source><translation>每分钟</translation></message>
     <message><source>hourly</source><translation>每小时</translation></message>
     <message><source>daily</source><translation>每天</translation></message>

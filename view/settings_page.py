@@ -322,11 +322,11 @@ class SyncFolderListSettingCard(ExpandSettingCard):
         """移除监视文件夹配置。仅停止同步，不删除 TG 频道和本地数据库。"""
         name = Path(item.folder_path).name
         title = self.tr("Stop watching")
-        content = (
-            self.tr('Stop watching "') + name
-            + self.tr('"?\n\nYour local files and Telegram channel will NOT be deleted.\n'
-                      'You can re-add this folder to resume syncing.')
-        )
+        content = self.tr(
+            'Stop watching "{name}"?\n\n'
+            'Your local files and Telegram channel will NOT be deleted.\n'
+            'You can re-add this folder to resume syncing.'
+        ).format(name=name)
         dlg = Dialog(title, content, self.window())
         dlg.yesButton.setText(self.tr("Stop watching"))
         dlg.cancelButton.setText(self.tr("Cancel"))

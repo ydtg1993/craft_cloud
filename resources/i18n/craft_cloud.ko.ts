@@ -243,24 +243,14 @@ Telegram의 해당 파일도 함께 정리됩니다. 이 작업은 취소할 수
     <message><source>Channel Name:</source><translation>채널 이름:</translation></message>
     <message><source>Add folder</source><translation>폴더 추가</translation></message>
     <message><source>Channel creation failed</source><translation>채널 생성 실패</translation></message>
-    <message><source>Confirm deletion</source><translation>삭제 확인</translation></message>
-    <message><source>Remove sync configuration for "</source><translation>Remove sync configuration for "</translation></message>
-    <message><source>"?
+    <message><source>Stop watching</source><translation>감시 중지</translation></message>
+    <message><source>Stop watching &quot;{name}&quot;?
 
-This will NOT delete your local files.</source><translation>"?
+Your local files and Telegram channel will NOT be deleted.
+You can re-add this folder to resume syncing.</source><translation>&quot;{name}&quot; 감시를 중지하시겠습니까?
 
-This will NOT delete your local files.</translation></message>
-    <message><source>Delete Telegram channel?</source><translation>Telegram 채널을 삭제하시겠습니까?</translation></message>
-    <message><source>Also delete the Telegram channel for "</source><translation>Also delete the Telegram channel for "</translation></message>
-    <message><source>"?
-
-Files already uploaded to this channel will become inaccessible.</source><translation>"?
-
-Files already uploaded to this channel will become inaccessible.</translation></message>
-    <message><source>Deleted</source><translation>삭제됨</translation></message>
-    <message><source>Sync folder "{}" and its channel have been deleted.</source><translation>동기화 폴더 "{}"와 해당 채널이 삭제되었습니다.</translation></message>
-    <message><source>Partially deleted</source><translation>부분 삭제됨</translation></message>
-    <message><source>Channel deletion failed, but local config has been removed.</source><translation>채널 삭제에 실패했지만 로컬 구성이 제거되었습니다.</translation></message>
+로컬 파일과 Telegram 채널은 삭제되지 않습니다.
+언제든지 이 폴더를 다시 추가하여 동기화를 재개할 수 있습니다.</translation></message>
     <message><source>minutely</source><translation>매분</translation></message>
     <message><source>hourly</source><translation>매시간</translation></message>
     <message><source>daily</source><translation>매일</translation></message>
