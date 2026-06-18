@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os, sys
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 # ── 项目模块 + 第三方库隐式导入 ───────────────────────────
@@ -67,6 +68,11 @@ _datas = [
     ('resources', 'resources'),            # 图标 + i18n 翻译文件
     ('config', 'config'),                  # 默认配置文件
 ]
+
+# ffmpeg 可执行文件（可选：如果 scripts/ 下有 ffmpeg.exe 则打包）
+_ffmpeg_src = Path(SPECPATH).resolve().parent / "scripts" / "ffmpeg.exe"
+if _ffmpeg_src.is_file():
+    _datas.append((str(_ffmpeg_src), 'scripts'))
 _datas += collect_data_files('qfluentwidgets')   # QFluentWidgets 图标/样式
 _datas += collect_data_files('jieba')            # jieba 分词词典
 
