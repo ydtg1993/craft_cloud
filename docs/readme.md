@@ -1,4 +1,14 @@
-# CraftCloud v2.0
+<p align="left">
+    <span>
+        <b>English</b>
+    </span>
+    <span> • </span>
+    <a href="readme-CH.md">
+        中文
+    </a>
+</p>
+
+# CraftCloud v2.0.0 🌐 [craftcloud.cc.cd](https://craftcloud.cc.cd/)
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6%2BQFluentWidgets-green)](https://doc.qt.io/qtforpython-6/)
@@ -6,7 +16,6 @@
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE.txt)
 
 **CraftCloud** turns Telegram into unlimited cloud storage. It provides a cloud‑drive‑like desktop interface with file upload, download, online preview, directory management, and automatic local folder sync. The app minimizes to the system tray and runs background sync tasks without interrupting your workflow.
-
 
 ---
 
@@ -53,6 +62,46 @@
 
 ---
 
+## Preview
+
+<table>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
+  </tr>
+</table>
+
+### Tutorial
+
+<table>
+  <tr>
+    <td align="center"><b>Login</b></td>
+    <td align="center"><b>File Operations</b></td>
+    <td align="center"><b>Auto Sync</b></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
+    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
+  </a>
+</p>
+
+---
+
 > To obtain Telegram API credentials: visit [my.telegram.org](https://my.telegram.org/), create an application, and get your `api_id` and `api_hash`.
 
 ## Architecture
@@ -90,38 +139,6 @@ pip install -r requirements.txt
 # Run
 python main.py
 ```
-
----
-
-## Preview
-
-<table>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
-  </tr>
-</table>
-
-### Tutorial
-
-<table>
-  <tr>
-    <td align="center"><b>Login</b></td>
-    <td align="center"><b>File Operations</b></td>
-    <td align="center"><b>Auto Sync</b></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
-  </tr>
-</table>
 
 ---
 
