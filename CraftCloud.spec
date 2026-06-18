@@ -70,7 +70,7 @@ _datas = [
 ]
 
 # ffmpeg 可执行文件（可选：如果 scripts/ 下有 ffmpeg.exe 则打包）
-_ffmpeg_src = Path(SPECPATH).resolve().parent / "scripts" / "ffmpeg.exe"
+_ffmpeg_src = Path(SPECPATH).resolve() / "scripts" / "ffmpeg.exe"
 if _ffmpeg_src.is_file():
     _datas.append((str(_ffmpeg_src), 'scripts'))
 _datas += collect_data_files('qfluentwidgets')   # QFluentWidgets 图标/样式

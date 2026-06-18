@@ -198,15 +198,25 @@ def get_cache_dir() -> Path:
 def get_ffmpeg_path() -> str:
     """返回 ffmpeg 可执行文件路径。
 
-    优先返回 bundled 版本（scripts/ffmpeg），找不到则回退到系统 PATH。
-    打包后 PyInstaller 会把 scripts/ffmpeg.exe 解压到 _MEIPASS/scripts/ 目录。
+    优先返回 bundled 版本（scripts/ffmpeg.exe），找不到则回退到系统 PATH。
+    打包后 PyInstaller COLLECT 会把 scripts/ffmpeg.exe 放到 dist 根目录的 scripts/ 下。
+    兼容不同 PyInstaller 版本 _MEIPASS 指向的差异：
+    - 旧版 _MEIPASS 指向 exe 所在目录
+    - 新版 _MEIPASS 可能指向 _internal 子目录
+    因此按优先级尝试多个 candidate 路径。
     """
     if getattr(sys, 'frozen', False):
-        bundled = Path(sys._MEIPASS) / "scripts" / "ffmpeg.exe"
+        candidates = [
+            Path(sys._MEIPASS) / "scripts" / "ffmpeg.exe",
+            Path(sys.executable).parent / "scripts" / "ffmpeg.exe",
+        ]
     else:
-        bundled = Path(__file__).resolve().parent.parent / "scripts" / "ffmpeg.exe"
-    if bundled.is_file():
-        return str(bundled)
+        candidates = [
+            Path(__file__).resolve().parent.parent / "scripts" / "ffmpeg.exe",
+        ]
+    for bundled in candidates:
+        if bundled.is_file():
+            return str(bundled)
     return "ffmpeg"  # 回退到系统 PATH
 
 
