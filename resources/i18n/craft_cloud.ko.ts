@@ -275,14 +275,8 @@ You can re-add this folder to resume syncing.</source><translation>&quot;{name}&
     <message><source>Oldest first</source><translation>오래된순</translation></message>
     <message><source>Largest first</source><translation>큰 파일순</translation></message>
     <message><source>Smallest first</source><translation>작은 파일순</translation></message>
-    <message><source>Upload: -- GB</source><translation>업로드: -- GB</translation></message>
-    <message><source>Download: -- GB</source><translation>다운로드: -- GB</translation></message>
-    <message><source>Total: -- GB</source><translation>합계: -- GB</translation></message>
-    <message><source>Limit: -- GB</source><translation>한도: -- GB</translation></message>
-    <message><source>Upload: {:.2f} GB</source><translation>업로드: {:.2f} GB</translation></message>
-    <message><source>Download: {:.2f} GB</source><translation>다운로드: {:.2f} GB</translation></message>
-    <message><source>Total: {:.2f} GB</source><translation>합계: {:.2f} GB</translation></message>
-    <message><source>Limit: {:.2f} GB</source><translation>한도: {:.2f} GB</translation></message>
+    <message><source>Today's Size</source><translation>오늘 크기</translation></message>
+    <message><source>Today's Count</source><translation>오늘 수량</translation></message>
 
     
     <message><source>Date Modified</source><translation>수정 날짜</translation></message>

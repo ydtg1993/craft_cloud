@@ -135,19 +135,19 @@ class HomePage(QWidget):
         status_layout.setContentsMargins(0, 0, 0, 0)
         status_layout.setSpacing(16)
 
-        self.status_label_upload = QLabel(self.tr("Upload: -- GB"))
+        self.status_label_upload = QLabel(self.tr("Upload") + ": -- GB")
         self.status_label_upload.setObjectName("statusUpload")
         status_layout.addWidget(self.status_label_upload)
 
-        self.status_label_download = QLabel(self.tr("Download: -- GB"))
+        self.status_label_download = QLabel(self.tr("Download") + ": -- GB")
         self.status_label_download.setObjectName("statusDownload")
         status_layout.addWidget(self.status_label_download)
 
-        self.status_label_today_size = QLabel(self.tr("Today upload: -- / --"))
+        self.status_label_today_size = QLabel(self.tr("Today's Size")+": -- / --")
         self.status_label_today_size.setObjectName("statusTodaySize")
         status_layout.addWidget(self.status_label_today_size)
 
-        self.status_label_today_count = QLabel(self.tr("File count: -- / --"))
+        self.status_label_today_count = QLabel(self.tr("Today's Count") + ": -- / --")
         self.status_label_today_count.setObjectName("statusTodayCount")
         status_layout.addWidget(self.status_label_today_count)
         status_layout.addStretch()
@@ -187,23 +187,23 @@ class HomePage(QWidget):
             count_limit: 当日数量上限，None 表示未启用 → 显示 ∞
         """
         self.status_label_upload.setText(
-            self.tr("Upload: {:.2f} GB").format(upload_gb))
+            self.tr("Upload") + ": {:.2f} GB".format(upload_gb))
         self.status_label_download.setText(
-            self.tr("Download: {:.2f} GB").format(download_gb))
+            self.tr("Download") + ": {:.2f} GB".format(download_gb))
 
         # ── 当日上传 大小 ──
         today_gb = today_size_bytes / (1024 ** 3)
         if size_limit_gb is not None:
             self.status_label_today_size.setText(
-                self.tr("Today: {:.2f} / {:.2f} GB").format(today_gb, size_limit_gb))
+                self.tr("Today's Size") + ": {:.2f} / {:.2f} GB".format(today_gb, size_limit_gb))
         else:
             self.status_label_today_size.setText(
-                self.tr("Today: {:.2f} / ∞ GB").format(today_gb))
+                self.tr("Today's Size") + ": {:.2f} / ∞ GB".format(today_gb))
 
         # ── 当日上传 数量 ──
         if count_limit is not None:
             self.status_label_today_count.setText(
-                self.tr("Files: {} / {}").format(today_file_count, count_limit))
+                self.tr("Today's Count") + ": {} / {}".format(today_file_count, count_limit))
         else:
             self.status_label_today_count.setText(
-                self.tr("Files: {} / ∞").format(today_file_count))
+                self.tr("Today's Count") + ": {} / ∞".format(today_file_count))

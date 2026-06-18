@@ -275,14 +275,8 @@ You can re-add this folder to resume syncing.</source><translation>停止监视 
     <message><source>Oldest first</source><translation>最旧优先</translation></message>
     <message><source>Largest first</source><translation>最大优先</translation></message>
     <message><source>Smallest first</source><translation>最小优先</translation></message>
-    <message><source>Upload: -- GB</source><translation>上传：-- GB</translation></message>
-    <message><source>Download: -- GB</source><translation>下载：-- GB</translation></message>
-    <message><source>Total: -- GB</source><translation>合计：-- GB</translation></message>
-    <message><source>Limit: -- GB</source><translation>限制：-- GB</translation></message>
-    <message><source>Upload: {:.2f} GB</source><translation>上传：{:.2f} GB</translation></message>
-    <message><source>Download: {:.2f} GB</source><translation>下载：{:.2f} GB</translation></message>
-    <message><source>Total: {:.2f} GB</source><translation>合计：{:.2f} GB</translation></message>
-    <message><source>Limit: {:.2f} GB</source><translation>限制：{:.2f} GB</translation></message>
+    <message><source>Today's Size</source><translation>当日上传大小</translation></message>
+    <message><source>Today's Count</source><translation>当日上传数量</translation></message>
 
     
     <message><source>Date Modified</source><translation>修改时间</translation></message>

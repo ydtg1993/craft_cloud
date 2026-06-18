@@ -275,14 +275,8 @@ You can re-add this folder to resume syncing.</source><translation>Остано�
     <message><source>Oldest first</source><translation>Сначала старые</translation></message>
     <message><source>Largest first</source><translation>Сначала большие</translation></message>
     <message><source>Smallest first</source><translation>Сначала маленькие</translation></message>
-    <message><source>Upload: -- GB</source><translation>Загрузка: -- ГБ</translation></message>
-    <message><source>Download: -- GB</source><translation>Скачивание: -- ГБ</translation></message>
-    <message><source>Total: -- GB</source><translation>Всего: -- ГБ</translation></message>
-    <message><source>Limit: -- GB</source><translation>Лимит: -- ГБ</translation></message>
-    <message><source>Upload: {:.2f} GB</source><translation>Загрузка: {:.2f} ГБ</translation></message>
-    <message><source>Download: {:.2f} GB</source><translation>Скачивание: {:.2f} ГБ</translation></message>
-    <message><source>Total: {:.2f} GB</source><translation>Всего: {:.2f} ГБ</translation></message>
-    <message><source>Limit: {:.2f} GB</source><translation>Лимит: {:.2f} ГБ</translation></message>
+    <message><source>Today's Size</source><translation>Размер за день</translation></message>
+    <message><source>Today's Count</source><translation>Количество за день</translation></message>
 
     
     <message><source>Date Modified</source><translation>Дата изменения</translation></message>

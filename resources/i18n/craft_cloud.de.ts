@@ -275,14 +275,8 @@ Sie können diesen Ordner jederzeit wieder hinzufügen, um die Synchronisierung 
     <message><source>Oldest first</source><translation>Älteste zuerst</translation></message>
     <message><source>Largest first</source><translation>Größte zuerst</translation></message>
     <message><source>Smallest first</source><translation>Kleinste zuerst</translation></message>
-    <message><source>Upload: -- GB</source><translation>Upload: -- GB</translation></message>
-    <message><source>Download: -- GB</source><translation>Download: -- GB</translation></message>
-    <message><source>Total: -- GB</source><translation>Gesamt: -- GB</translation></message>
-    <message><source>Limit: -- GB</source><translation>Limit: -- GB</translation></message>
-    <message><source>Upload: {:.2f} GB</source><translation>Upload: {:.2f} GB</translation></message>
-    <message><source>Download: {:.2f} GB</source><translation>Download: {:.2f} GB</translation></message>
-    <message><source>Total: {:.2f} GB</source><translation>Gesamt: {:.2f} GB</translation></message>
-    <message><source>Limit: {:.2f} GB</source><translation>Limit: {:.2f} GB</translation></message>
+    <message><source>Today's Size</source><translation>Heutige Größe</translation></message>
+    <message><source>Today's Count</source><translation>Heutige Anzahl</translation></message>
 
     
     <message><source>Date Modified</source><translation>Änderungsdatum</translation></message>

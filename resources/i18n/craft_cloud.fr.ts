@@ -275,14 +275,8 @@ Vous pouvez réajouter ce dossier à tout moment pour reprendre la synchronisati
     <message><source>Oldest first</source><translation>Plus ancien d'abord</translation></message>
     <message><source>Largest first</source><translation>Plus grand d'abord</translation></message>
     <message><source>Smallest first</source><translation>Plus petit d'abord</translation></message>
-    <message><source>Upload: -- GB</source><translation>Téléversement : -- Go</translation></message>
-    <message><source>Download: -- GB</source><translation>Téléchargement : -- Go</translation></message>
-    <message><source>Total: -- GB</source><translation>Total : -- Go</translation></message>
-    <message><source>Limit: -- GB</source><translation>Limite : -- Go</translation></message>
-    <message><source>Upload: {:.2f} GB</source><translation>Téléversement : {:.2f} Go</translation></message>
-    <message><source>Download: {:.2f} GB</source><translation>Téléchargement : {:.2f} Go</translation></message>
-    <message><source>Total: {:.2f} GB</source><translation>Total : {:.2f} Go</translation></message>
-    <message><source>Limit: {:.2f} GB</source><translation>Limite : {:.2f} Go</translation></message>
+    <message><source>Today's Size</source><translation>Taille du jour</translation></message>
+    <message><source>Today's Count</source><translation>Nombre du jour</translation></message>
 
     
     <message><source>Date Modified</source><translation>Date de modification</translation></message>
