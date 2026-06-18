@@ -12,9 +12,9 @@
 ## 界面预览
 <table>
   <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/preview/preview-1.PNG"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/preview/preview-2.PNG"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/preview/preview-3.PNG"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-1.PNG"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-2.PNG"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-3.PNG"/></td>
   </tr>
 </table>
 
