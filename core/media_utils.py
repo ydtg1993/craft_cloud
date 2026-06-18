@@ -7,11 +7,14 @@
 """
 import re
 import subprocess
-import os
+import sys
 from pathlib import Path
 from loguru import logger
-from core.utils import get_media_extensions
+from core.utils import get_ffmpeg_path, get_media_extensions
 from core.cache_manager import CacheManager
+
+# Windows 打包后 subprocess 调用 ffmpeg 不弹 CMD 黑窗
+_CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 # ── 配置常量 ────────────────────────────────────────────────────────
 VIDEO_CLIP_DURATION = 15       # 视频预览切片最长秒数
@@ -49,10 +52,10 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
         except Exception as e:
             logger.debug(f"Pillow failed for {file_path}, falling back to ffmpeg: {e}")
 
-    cmd = ['ffmpeg', '-i', file_path, '-vframes', '1', '-q:v', '2', thumb_path, '-y']
+    cmd = [get_ffmpeg_path(), '-i', file_path, '-vframes', '1', '-q:v', '2', thumb_path, '-y']
     try:
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       check=True, timeout=10)
+                       creationflags=_CREATION_FLAGS, check=True, timeout=10)
         if Path(thumb_path).exists():
             cache.set(cache_key, thumb_path)
             return thumb_path
@@ -85,13 +88,13 @@ def generate_media_clip(file_path, output_dir, is_audio=False):
         # 音频：一律重编码为 AAC 128kbps M4A，-c copy 在 flac/ogg 等格式上
         # -t 截断行为不可靠，且容器与编码可能不匹配
         clip_path = str(Path(output_dir) / f"{safe_basename}_clip.m4a")
-        cmd = ['ffmpeg', '-i', file_path, '-t', str(duration),
+        cmd = [get_ffmpeg_path(), '-i', file_path, '-t', str(duration),
                '-c:a', 'aac', '-b:a', AUDIO_BITRATE,
                '-vn', clip_path, '-y']
     else:
         # 视频：一律重编码以限制时长 + 分辨率，输出 MP4
         clip_path = str(Path(output_dir) / f"{safe_basename}_clip.mp4")
-        cmd = ['ffmpeg', '-i', file_path, '-t', str(duration),
+        cmd = [get_ffmpeg_path(), '-i', file_path, '-t', str(duration),
                '-vf', f'scale=-2:{VIDEO_MAX_HEIGHT}',
                '-c:v', 'libx264', '-preset', 'slow',
                '-r', '20',
@@ -101,7 +104,7 @@ def generate_media_clip(file_path, output_dir, is_audio=False):
 
     try:
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       check=True, timeout=120)
+                       creationflags=_CREATION_FLAGS, check=True, timeout=120)
         if Path(clip_path).exists():
             cache.set(cache_key, clip_path)
             return clip_path

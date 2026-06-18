@@ -3,10 +3,93 @@
 纯系统工具：路径、时间、格式化。不含业务逻辑或 UI 代码。
 """
 import sys
+import os
+import atexit
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from loguru import logger
 from core.translator import tr
+
+# ── 单实例锁 ─────────────────────────────────────────────────
+_instance_lock_path = None
+
+
+def _is_process_running(pid: int) -> bool:
+    """检查指定 PID 的进程是否仍在运行（跨平台）。"""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+            if handle:
+                kernel32.CloseHandle(handle)
+                return True
+            return False
+        except Exception:
+            return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except (OSError, ProcessLookupError):
+            return False
+
+
+def acquire_single_instance_lock() -> bool:
+    """获取单实例锁，确保只有一个程序实例在运行。
+
+    使用 PID 锁文件方式：启动时写入当前 PID，启动前检查已有 PID
+    是否仍在运行。进程崩溃时锁文件自动变为过期，下次启动会清理。
+
+    Returns:
+        True:  成功获取锁，当前是唯一实例
+        False: 已有实例在运行，应退出
+    """
+    global _instance_lock_path
+
+    if getattr(sys, 'frozen', False):
+        data_dir = Path(sys.executable).parent / "data"
+    else:
+        data_dir = Path(__file__).resolve().parent.parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    lock_path = data_dir / ".instance.lock"
+
+    if lock_path.exists():
+        try:
+            with open(lock_path, 'r') as f:
+                old_pid = int(f.read().strip())
+            if _is_process_running(old_pid):
+                return False
+        except (ValueError, OSError):
+            pass  # 锁文件损坏，覆盖它
+
+        # 清理过期锁
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
+    try:
+        with open(lock_path, 'w') as f:
+            f.write(str(os.getpid()))
+        _instance_lock_path = lock_path
+        atexit.register(_release_single_instance_lock)
+        return True
+    except OSError:
+        return False
+
+
+def _release_single_instance_lock():
+    """退出时清理锁文件。"""
+    global _instance_lock_path
+    if _instance_lock_path and _instance_lock_path.exists():
+        try:
+            _instance_lock_path.unlink()
+        except OSError:
+            pass
+        _instance_lock_path = None
 
 
 
@@ -110,6 +193,21 @@ def get_cache_dir() -> Path:
         p = Path(__file__).resolve().parent.parent / "data" / "cache"
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def get_ffmpeg_path() -> str:
+    """返回 ffmpeg 可执行文件路径。
+
+    优先返回 bundled 版本（scripts/ffmpeg），找不到则回退到系统 PATH。
+    打包后 PyInstaller 会把 scripts/ffmpeg.exe 解压到 _MEIPASS/scripts/ 目录。
+    """
+    if getattr(sys, 'frozen', False):
+        bundled = Path(sys._MEIPASS) / "scripts" / "ffmpeg.exe"
+    else:
+        bundled = Path(__file__).resolve().parent.parent / "scripts" / "ffmpeg.exe"
+    if bundled.is_file():
+        return str(bundled)
+    return "ffmpeg"  # 回退到系统 PATH
 
 
 MEDIA_EXTENSIONS = {
