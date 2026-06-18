@@ -18,6 +18,21 @@
   </tr>
 </table>
 
+### 操作教程
+
+<table>
+  <tr>
+    <td align="center"><b>登录</b></td>
+    <td align="center"><b>文件操作</b></td>
+    <td align="center"><b>自动同步</b></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
+  </tr>
+</table>
+
 ## 功能特性
 
 - 🔐 **Telegram 登录**
