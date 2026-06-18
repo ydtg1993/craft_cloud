@@ -1,4 +1,14 @@
-# CraftCloud v2.0
+<p align="left">
+    <a href="readme.md">
+        English
+    </a>
+    <span> • </span>
+    <span>
+        <b>中文</b>
+    </span>
+</p>
+
+# CraftCloud v2.0.0 🌐 [craftcloud.cc.cd](https://craftcloud.cc.cd/)
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6%2BQFluentWidgets-green)](https://doc.qt.io/qtforpython-6/)
@@ -8,30 +18,6 @@
 **CraftCloud** 是一款将 Telegram 作为无限云存储的桌面客户端。提供类似网盘的界面，支持文件上传、下载、在线预览、目录管理以及本地文件夹自动同步。程序可最小化至系统托盘，后台静默运行同步任务，不影响前台工作。
 
 ---
-
-## 界面预览
-<table>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
-  </tr>
-</table>
-
-### 操作教程
-
-<table>
-  <tr>
-    <td align="center"><b>登录</b></td>
-    <td align="center"><b>文件操作</b></td>
-    <td align="center"><b>自动同步</b></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
-  </tr>
-</table>
 
 ## 功能特性
 
@@ -76,6 +62,46 @@
 
 ---
 
+## 界面预览
+
+<table>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
+  </tr>
+</table>
+
+### 操作教程
+
+<table>
+  <tr>
+    <td align="center"><b>登录</b></td>
+    <td align="center"><b>文件操作</b></td>
+    <td align="center"><b>自动同步</b></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
+    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
+  </a>
+</p>
+
+---
+
 > Telegram API 凭据申请：访问 [my.telegram.org](https://my.telegram.org/)，创建应用获取 `api_id` 和 `api_hash`。
 
 ## 架构
@@ -113,6 +139,8 @@ pip install -r requirements.txt
 # 运行
 python main.py
 ```
+
+---
 
 ## 许可证
 
