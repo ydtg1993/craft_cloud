@@ -13,9 +13,9 @@
 ## Preview
 <table>
   <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-1.PNG"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-2.PNG"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview-3.PNG"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview1.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview2.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/pics/preview3.png"/></td>
   </tr>
 </table>
 
