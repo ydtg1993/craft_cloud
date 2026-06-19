@@ -590,7 +590,7 @@ class MainWindow(FluentWindow):
                 os.remove(str(session_file))
             except Exception as e:
                 logger.warning(f"删除 session 文件失败: {e}")
-        self.config_manager.save()
+        self.config_manager.save_now()
         # 提示用户
         InfoBar.warning(
             self.tr("Session Expired"),
@@ -611,7 +611,7 @@ class MainWindow(FluentWindow):
                 os.remove(str(session_file))
             except Exception as e:
                 logger.warning(f"删除 session 文件失败: {e}")
-        self.config_manager.save()
+        self.config_manager.save_now()
         self.logout_requested.emit()
 
     def closeEvent(self, event):

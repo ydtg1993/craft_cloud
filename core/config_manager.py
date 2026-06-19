@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
+from PySide6.QtCore import QTimer
 from loguru import logger
 from core.utils import get_sessions_dir
 
@@ -59,7 +60,15 @@ class ConfigManager:
     """Configuration manager using Pydantic validation + YAML storage.
 
     Backward-compatible: ``self.config`` is a plain dict for existing callers.
+
+    save() uses a 500ms debounce timer to coalesce rapid calls from UI
+    event handlers. For critical paths (logout, session expiry), use
+    save_now() which writes immediately and blocks — acceptable because
+    those paths already transition away from the main window.
     """
+
+    # Debounce interval for deferred saves (ms)
+    _SAVE_DEBOUNCE_MS = 500
 
     def __init__(self, config_path: str = "config/config.yaml"):
         if getattr(sys, 'frozen', False):
@@ -67,6 +76,11 @@ class ConfigManager:
         self.config_path = config_path
         self.config = self.load()
         self._migrate_old_config()
+        # Debounce timer: coalesces rapid save() calls into one disk write
+        self._save_timer = QTimer()
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(self._SAVE_DEBOUNCE_MS)
+        self._save_timer.timeout.connect(self._do_save)
 
     def load(self) -> dict:
         """Load config from YAML, validate with Pydantic, return as dict."""
@@ -84,7 +98,48 @@ class ConfigManager:
             return self._default_dict()
 
     def save(self) -> None:
-        """Validate and persist config to YAML."""
+        """Schedule a deferred save on the main thread, or save immediately if
+        called from a background thread (where QTimer cannot fire).
+
+        On the main thread: coalesces rapid calls from UI event handlers
+        (set_view_mode, set_language, update_sync_folder, etc.) via a
+        500ms debounce timer. Returns immediately — the actual I/O
+        happens asynchronously on the Qt event loop.
+
+        On a background thread: writes immediately (QTimer needs an
+        event loop, which background threads don't have).
+
+        For critical main-thread paths that need an immediate write
+        (logout, session expiry), use save_now().
+        """
+        if self._is_main_thread():
+            self._save_timer.start()
+        else:
+            # Background thread (e.g. sync tasks): QTimer won't fire here
+            self._do_save()
+
+    def save_now(self) -> None:
+        """Immediately validate and persist config to YAML (blocking).
+
+        Use only for critical paths where data loss is unacceptable and
+        the blocking I/O is acceptable (e.g. before logout or exit).
+        """
+        self._save_timer.stop()  # Cancel any pending deferred save
+        self._do_save()
+
+    def flush(self) -> None:
+        """Force any pending deferred save to disk. Call before app exit."""
+        if self._save_timer.isActive():
+            self._save_timer.stop()
+            self._do_save()
+
+    @staticmethod
+    def _is_main_thread() -> bool:
+        import threading
+        return threading.current_thread() is threading.main_thread()
+
+    def _do_save(self) -> None:
+        """Internal: validate and persist config to YAML."""
         try:
             validated = AppConfig(**self.config)
             data = validated.model_dump()

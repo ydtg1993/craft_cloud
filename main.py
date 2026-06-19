@@ -93,7 +93,9 @@ def main():
     else:
         show_login_window()
 
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    config_mgr.flush()  # Ensure any deferred config saves are written
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

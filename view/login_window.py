@@ -340,7 +340,7 @@ class LoginWindow(QDialog):
         else:
             # 无用户信息时仍保存 logged_in 标志（异常路径）
             self.config["telethon"] = {"user_id": 0, "logged_in": True}
-            self.config_manager.save()
+            self.config_manager.save_now()
 
         InfoBar.success(self.tr("Success"), self.tr("Login successful!"), position=InfoBarPosition.TOP, parent=self)
         QTimer.singleShot(1000, self.accept)

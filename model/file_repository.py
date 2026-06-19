@@ -224,6 +224,7 @@ class FileRepository:
     def add_file(self, file_id, message_id, chat_id, original_name, display_name,
                  directory_id, file_size, mime_type, local_path=None, file_hash=None,
                  thumbnail_path=None, cached_video_path=None, is_sync=0, _bg=False):
+        # Phase 1: DB write under guard (short-lived lock)
         with db_write_guard(timeout=None if _bg else 5.0):
             session = self._session()
             try:
@@ -242,15 +243,8 @@ class FileRepository:
 
                 session.add(DailyUploadLog(file_size=file_size, upload_time=upload_time))
                 session.commit()
-                # Whoosh indexing must be done AFTER commit — otherwise it interferes with
-                # the SQLite WAL commit on Windows (Whoosh file operations can block WAL writes)
-                if self._indexer:
-                    try:
-                        self._update_whoosh(file_pk, display_name or original_name)
-                    except Exception:
-                        logger.exception(f"[DB] Whoosh索引更新失败: id={file_pk}")
-                logger.info(f"[DB] 文件记录已保存: id={file_pk}, name={display_name or original_name}, dir={directory_id}")
-                return file_pk
+                indexer_name = display_name or original_name
+                logger.info(f"[DB] 文件记录已保存: id={file_pk}, name={indexer_name}, dir={directory_id}")
             except SQLAlchemyError as e:
                 session.rollback()
                 logger.error(f"[DB] 保存文件记录失败: {e}, name={display_name or original_name}, dir={directory_id}")
@@ -259,6 +253,18 @@ class FileRepository:
                 session.rollback()
                 logger.exception(f"[DB] 保存文件记录时发生未预期错误: name={display_name or original_name}")
                 raise
+
+        # Phase 2: Whoosh indexing OUTSIDE db_write_guard
+        # Must happen AFTER commit (so DB row exists), but does NOT need
+        # the write lock. Moving it here reduces lock contention with
+        # concurrent sync operations and prevents UI-thread blocking.
+        if self._indexer:
+            try:
+                self._update_whoosh(file_pk, indexer_name)
+            except Exception:
+                logger.exception(f"[DB] Whoosh索引更新失败: id={file_pk}")
+
+        return file_pk
 
     def update_file_cache_paths(self, file_id, thumbnail_path, cached_video_path, _bg=False):
         with db_write_guard(timeout=None if _bg else 5.0):
@@ -278,12 +284,15 @@ class FileRepository:
                     update(File).where(File.id == file_id).values(display_name=new_name)
                 )
                 session.commit()
-                self._update_index(file_id, new_name)
                 logger.info(f"[DB] 文件显示名已更新: id={file_id}, new_name={new_name}")
             except SQLAlchemyError as e:
                 session.rollback()
                 logger.error(f"[DB] 更新文件显示名失败: {e}, id={file_id}")
                 raise
+
+        # Whoosh index update outside db_write_guard — reduces lock contention
+        if self._indexer:
+            self._update_whoosh(file_id, new_name)
 
     def update_file_original_name(self, file_id, original_name, _bg=False):
         with db_write_guard(timeout=None if _bg else 5.0):
@@ -503,15 +512,6 @@ class FileRepository:
     # ------------------------------------------------------------------
     # Index management (Whoosh)
     # ------------------------------------------------------------------
-
-    def _update_index(self, file_id, name):
-        """Update the Whoosh search index for a file (used by update_display_name).
-
-        Called from within db_write_guard (via update_display_name), so it
-        inherits the write lock protection.
-        """
-        if self._indexer:
-            self._update_whoosh(file_id, name)
 
     def _update_whoosh(self, file_id, name):
         """Update Whoosh index (must be called AFTER DB commit to avoid WAL conflicts)."""

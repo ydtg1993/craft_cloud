@@ -79,7 +79,13 @@ class TgWorkerThread(QObject):
         logger.info("[TgWorker] 线程已启动")
 
     def stop(self, timeout=5.0):
-        """Stop the event loop, disconnect client, and join thread."""
+        """Stop the event loop, disconnect client (non-blocking).
+
+        Submits the shutdown coroutine and spawns a background daemon
+        thread to join the worker thread.  The calling thread returns
+        immediately — essential when stop() is invoked from the UI
+        thread (e.g. session_expired or logout handlers).
+        """
         if not self._running:
             return
         self._running = False
@@ -88,11 +94,26 @@ class TgWorkerThread(QObject):
                 asyncio.run_coroutine_threadsafe(self._shutdown(), self._loop)
             except RuntimeError:
                 pass  # loop already closed
+
+        # ── Non-blocking join ──────────────────────────────────────
+        # 将 thread.join() 移到 daemon 线程中，不阻塞调用线程（通常是 UI 线程）。
+        # 调用者（MainWindow）在 stop() 返回后立即执行清理（删 session 文件等），
+        # 此时 shutdown coroutine 已提交，worker 不会再访问 session 文件。
         if self._thread is not None and self._thread.is_alive():
-            self._thread.join(timeout=timeout)
-            if self._thread.is_alive():
-                logger.warning("[TgWorker] 线程未能在超时内退出")
-        logger.info("[TgWorker] 线程已停止")
+            worker_thread = self._thread
+
+            def _join_worker():
+                worker_thread.join(timeout=timeout)
+                if worker_thread.is_alive():
+                    logger.warning("[TgWorker] 线程未能在超时内退出")
+                else:
+                    logger.info("[TgWorker] 线程已停止")
+
+            threading.Thread(
+                target=_join_worker, daemon=True, name="tg-worker-join"
+            ).start()
+        else:
+            logger.info("[TgWorker] 线程已停止")
 
     # ── Thread main ────────────────────────────────────────────────
 
@@ -469,11 +490,13 @@ class TgWorkerThread(QObject):
                 except Exception as e:
                     retries += 1
                     error_str = str(e).lower()
-                    # Retry on transient errors (session lock, network)
+                    # Retry on transient errors (session lock, network, entity cache miss)
                     if retries <= max_retries and (
                         "database is locked" in error_str
                         or "timeout" in error_str
                         or "connection" in error_str
+                        or "could not find" in error_str
+                        or "input entity" in error_str
                     ):
                         import random
                         delay = random.uniform(1.0, 4.0)

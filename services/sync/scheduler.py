@@ -13,6 +13,12 @@
     例如：5分钟间隔 → 3分钟后唤起 → 下次最小化只需等2分钟。
 
     剩余时间 < 2秒时直接触发同步（避免无意义的小延迟）。
+
+非阻塞保证：
+    _trigger_sync() 由 QTimer.timeout 在主线程触发，但所有阻塞操作
+    （等待 worker 空闲、断开/重连共享客户端、执行同步任务）均跑在
+    独立的后台线程中。主线程仅在 _trigger_sync 中设置标志位和发射信号，
+    确保 UI 不会因同步准备而冻结。
 """
 import threading
 import time as _time_module
@@ -28,13 +34,17 @@ from services.sync.directory_sync_task import DirectorySyncTask
 _IDLE_POLL_MS = 500
 # 剩余时间小于此值直接触发（ms）
 _MIN_REMAINING_TRIGGER_MS = 2000
+# 重试延迟（秒）
+_RETRY_DELAY_SEC = 30
+# 等待 worker 空闲的最大轮询次数（每次 0.1s，共 30s）
+_MAX_IDLE_POLLS = 300
 
 
 class SyncScheduler(QObject):
     """自动同步调度器。
 
     管理每个同步文件夹的 QTimer，按配置的间隔创建 DirectorySyncTask
-    并在独立线程中执行。
+    并在独立线程中执行。所有阻塞 I/O 和网络操作均在后台线程完成。
     """
 
     sync_triggered = Signal(str)
@@ -242,12 +252,24 @@ class SyncScheduler(QObject):
         self._folder_started_at[folder_path] = _time_module.monotonic()
         self._trigger_sync(folder_path)
 
-    def _trigger_sync(self, folder_path):
-        """触发一次同步（防止并发）。
+    # ═══════════════════════════════════════════════════════════════
+    # 同步触发 — 非阻塞设计
+    #
+    # _trigger_sync() 由 QTimer.timeout 在主线程触发，仅做两件事：
+    #   1. 检查并发（_sync_running 标志）
+    #   2. 启动后台线程 _prep_and_run_sync()
+    #
+    # _prep_and_run_sync() 在后台线程中执行所有阻塞操作：
+    #   等待 worker 空闲 → 断开共享客户端 → 执行同步 → 重连
+    #
+    # 关键：主线程不会在任何地方被 time.sleep 或 future.result 阻塞。
+    # ═══════════════════════════════════════════════════════════════
 
-        关键：在启动同步线程前，先断开 TgWorkerThread 的共享客户端，
-        确保 sync 任务是唯一使用 session 文件的客户端，彻底避免
-        "database is locked" 竞争。
+    def _trigger_sync(self, folder_path):
+        """非阻塞同步入口（主线程调用）。
+
+        仅做并发检查 + 启动后台准备线程。
+        所有阻塞操作（等待、断开、同步、重连）均在后台线程完成。
         """
         if self._sync_running:
             return
@@ -259,40 +281,67 @@ class SyncScheduler(QObject):
             self._sync_running = False
             return
 
-        # ── 断开共享客户端，为同步任务腾出 session 文件 ──
-        #  关键：绝不能打断正在进行的上传/下载任务。
-        #  如果 worker 不空闲，跳过本次同步，等任务完成后再试。
+        # 发射 "同步中" 状态（在主线程，UI 可安全更新）
+        self.sync_status.emit(folder_path, tr("Syncing"))
+
+        # 所有阻塞操作移到后台线程执行
+        prep_thread = threading.Thread(
+            target=self._prep_and_run_sync,
+            args=(folder_path,),
+            daemon=True,
+            name=f"sync-{Path(folder_path).name}",
+        )
+        self._current_thread = prep_thread
+        prep_thread.start()
+
+    def _prep_and_run_sync(self, folder_path):
+        """后台线程：等待 worker 空闲 → 断开共享客户端 → 执行同步 → 重连。
+
+        这个函数跑在独立线程中，可以安全地使用 time.sleep 和
+        future.result() 而不会阻塞 UI。
+        """
+        import time as _time
         client_disconnected = False
+
+        # ── Phase 1: 等待 worker 空闲（不打断用户的上传/下载） ──
         if self._task_manager is not None:
-            import time as _time
-            # 等待活跃任务完成（最多 30s），不打断用户操作
             waited = 0
-            while not self._task_manager.is_worker_idle() and waited < 300:
+            while not self._task_manager.is_worker_idle() and waited < _MAX_IDLE_POLLS:
                 if self._stop_event.is_set():
                     self._sync_running = False
                     return
                 _time.sleep(0.1)
                 waited += 1
+
             if not self._task_manager.is_worker_idle():
-                # 仍有上传/下载在进行，跳过本次同步，30s 后重试
+                # 仍有上传/下载在进行，延后重试
                 logger.info(
                     f"[SyncScheduler] TgWorker 仍有活跃任务（已等 {waited * 0.1:.0f}s），"
-                    f"跳过本次同步以免打断用户操作，30s 后重试"
+                    f"{_RETRY_DELAY_SEC}s 后重试"
                 )
-                QTimer.singleShot(30000, lambda fp=folder_path: self._trigger_sync(fp))
-                self._sync_running = False
+                _time.sleep(_RETRY_DELAY_SEC)
+                if not self._stop_event.is_set():
+                    self._prep_and_run_sync(folder_path)
+                else:
+                    self._sync_running = False
                 return
-            # Worker 空闲 → 安全断开共享客户端
+
+            # ── Phase 2: 断开共享客户端，为同步让出 session 文件 ──
             client_disconnected = self._task_manager.disconnect_worker_for_sync(timeout=15.0)
             if not client_disconnected:
                 logger.warning(
-                    "[SyncScheduler] 无法断开共享客户端，推迟本次同步"
+                    "[SyncScheduler] 无法断开共享客户端，"
+                    f"{_RETRY_DELAY_SEC}s 后重试"
                 )
-                QTimer.singleShot(30000, lambda fp=folder_path: self._trigger_sync(fp))
-                self._sync_running = False
+                _time.sleep(_RETRY_DELAY_SEC)
+                if not self._stop_event.is_set():
+                    self._prep_and_run_sync(folder_path)
+                else:
+                    self._sync_running = False
                 return
 
-        self.sync_status.emit(folder_path, tr("Syncing"))
+        # ── Phase 3: 创建并执行同步任务（在本后台线程内同步运行） ──
+        self._client_was_disconnected = client_disconnected
         task = DirectorySyncTask(folder_path, self.config_manager, self.db, self._stop_event)
         task.signals.progress.connect(lambda d, t: self.sync_progress.emit(folder_path, d, t))
         task.signals.completed.connect(lambda count: self._on_sync_done(folder_path, count))
@@ -305,30 +354,29 @@ class SyncScheduler(QObject):
             self.sync_status.emit(folder_path, tr("Cancelled")),
             self.sync_completed.emit(folder_path, 0),
         ))
-        task.signals.finished.connect(self._on_task_finished)
+        # finished 信号仅做账本清理（reconnect 在 task.run() 之后内联执行）
+        task.signals.finished.connect(self._on_task_done)
         self._current_task = task
-        # 记录是否已断开客户端，供 _on_task_finished 恢复
-        self._client_was_disconnected = client_disconnected
-        # 同步任务运行在独立线程上，不共享线程池
-        self._current_thread = threading.Thread(
-            target=task.run, daemon=True,
-            name=f"sync-{Path(folder_path).name}"
-        )
-        self._current_thread.start()
 
-    def _on_task_finished(self):
-        """任务结束（无论成功/失败/取消），释放锁并恢复共享客户端。"""
+        # 在本线程同步执行同步逻辑（阻塞本线程，不影响 UI）
+        task.run()
+
+        # ── Phase 4: 恢复共享客户端（后台线程，不阻塞 UI） ──
+        if client_disconnected and self._task_manager is not None:
+            if not self._task_manager.reconnect_worker_after_sync(timeout=15.0):
+                logger.warning(
+                    "[SyncScheduler] 无法重连共享客户端，"
+                    "后续 UI 操作的 TG 请求可能失败"
+                )
+
+    def _on_task_done(self):
+        """同步任务结束后的账本清理（通过 finished 信号回调）。
+
+        注意：reconnect 已在 _prep_and_run_sync 的 Phase 4 中完成，
+        此方法仅重置标志位，不再执行阻塞操作。
+        """
         self._current_task = None
         self._sync_running = False
-        # 恢复 TgWorkerThread 的共享客户端
-        if getattr(self, '_client_was_disconnected', False):
-            self._client_was_disconnected = False
-            if self._task_manager is not None:
-                if not self._task_manager.reconnect_worker_after_sync(timeout=15.0):
-                    logger.warning(
-                        "[SyncScheduler] 无法重连共享客户端，"
-                        "后续 UI 操作的 TG 请求可能失败"
-                    )
 
     def _on_sync_done(self, folder_path, count):
         """单次同步成功完成。"""
