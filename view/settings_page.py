@@ -502,6 +502,7 @@ class SettingsPage(QWidget):
             if code == current_lang:
                 self.language_combo.setCurrentIndex(i)
                 break
+        self.language_combo.setMaxVisibleItems(3)
         self.language_combo.currentIndexChanged.connect(self._on_language_changed)
         lang_layout.addWidget(self.language_combo)
         lang_layout.addStretch()

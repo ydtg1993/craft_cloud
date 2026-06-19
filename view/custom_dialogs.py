@@ -168,6 +168,7 @@ class MoveFileDialog(MessageBoxBase):
         self.dir_combo = ComboBox(self)
         self.dir_combo.addItems(dir_items)
         self.dir_combo.setCurrentIndex(0)
+        self.dir_combo.setMaxVisibleItems(5)
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(BodyLabel(self.tr("Select target folder for {count} file(s):").format(count=file_count)))
         self.viewLayout.addWidget(self.dir_combo)
