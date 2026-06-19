@@ -207,6 +207,27 @@ class FileViewStack(QWidget):
                 self.fm.move_file(fid, target_dir_id)
             self.main._refresh_current_directory()
 
+    def _move_directory_dialog(self, dir_id):
+        """弹出目录迁移对话框，将子目录移动到同频道下的另一个父目录。"""
+        current_dir = self.main.current_dir_id
+        dirs = self.fm.get_channel_dirs_list(current_dir)
+        # 过滤掉自身（不能移动到自身下）
+        dirs = [(d_id, name, is_sync) for d_id, name, is_sync in dirs if d_id != dir_id]
+        if not dirs:
+            from qfluentwidgets import InfoBar, InfoBarPosition
+            InfoBar.warning(
+                self.tr("Warning"),
+                self.tr("No target directories available in the current channel."),
+                position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
+            return
+        items = [f"{name} (ID: {d_id})" for d_id, name, _ in dirs]
+        dlg = MoveFileDialog(items, 1, self.window())
+        if dlg.exec():
+            target = dlg.dir_combo.currentText()
+            target_dir_id = int(target.split("(ID: ")[-1].rstrip(")"))
+            self.fm.move_directory(dir_id, target_dir_id)
+            self.main._refresh_current_directory()
+
     # ---------- 右键菜单 (替换为 RoundMenu) ----------
     def _show_table_context_menu(self, pos):
         menu = RoundMenu(parent=self)
@@ -241,6 +262,12 @@ class FileViewStack(QWidget):
                 a2 = Action(FluentIcon.EDIT, self.tr("Rename"))
                 a2.triggered.connect(lambda _checked=False, d=_dir_id, n=_dir_name: self._do_rename_directory(d, n))
                 menu.addAction(a2)
+            # 仅一级目录下的子目录可迁移（parent_id != 0）
+            is_sub_dir = dir_info and dir_info.parent_id != 0
+            if not is_saved_messages and not is_sync_dir and is_sub_dir:
+                a_move = Action(FluentIcon.SEND, self.tr("Move to..."))
+                a_move.triggered.connect(lambda _checked=False, d=_dir_id: self._move_directory_dialog(d))
+                menu.addAction(a_move)
             if is_saved_messages:
                 pass  # No delete for Saved Messages
             elif is_sync_dir:
@@ -346,6 +373,12 @@ class FileViewStack(QWidget):
                 a2 = Action(FluentIcon.EDIT, self.tr("Rename"))
                 a2.triggered.connect(lambda _checked=False, d=_dir_id, n=_dir_name: self._do_rename_directory(d, n))
                 menu.addAction(a2)
+            # 仅一级目录下的子目录可迁移（parent_id != 0）
+            is_sub_dir = dir_info and dir_info.parent_id != 0
+            if not is_saved_messages and not is_sync_dir and is_sub_dir:
+                a_move = Action(FluentIcon.SEND, self.tr("Move to..."))
+                a_move.triggered.connect(lambda _checked=False, d=_dir_id: self._move_directory_dialog(d))
+                menu.addAction(a_move)
             if is_saved_messages:
                 pass  # No delete for Saved Messages
             else:

@@ -159,6 +159,27 @@ class FileManager(QObject):
             logger.exception(f"[FileManager] 移动文件失败: id={local_id}, target_dir={target_dir_id}")
             self.error_requested.emit(tr("Error"), tr("Failed to move file"))
 
+    def move_directory(self, dir_id, target_parent_id):
+        """将目录移动到同一频道下的另一个父目录。"""
+        try:
+            dir_info = self.db.get_directory_info(dir_id)
+            if not dir_info:
+                logger.warning(f"[FileManager] 移动目录失败: 找不到目录 id={dir_id}")
+                return
+            if dir_info.channel_id == "me" and dir_info.parent_id == 0:
+                logger.warning("Saved Messages 是系统目录，不允许移动")
+                return
+            self.db.dirs.move_directory(dir_id, target_parent_id)
+            logger.info(f"[FileManager] 目录已移动: id={dir_id}, new_parent={target_parent_id}")
+            self.dir_model_refresh_needed.emit()
+            self.ui_refresh_needed.emit()
+        except DatabaseBusyError:
+            logger.warning(f"[FileManager] 数据库繁忙，移动目录被拒绝: id={dir_id}")
+            self.error_requested.emit(tr("Database Busy"), tr("Database is busy, please try again"))
+        except Exception:
+            logger.exception(f"[FileManager] 移动目录失败: id={dir_id}, target_parent={target_parent_id}")
+            self.error_requested.emit(tr("Error"), tr("Failed to move directory"))
+
     def rename_directory(self, dir_id, new_name):
         if not new_name:
             return
