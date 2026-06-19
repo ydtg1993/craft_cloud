@@ -39,6 +39,7 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
     safe_basename = re.sub(r'[^\w\-.]', '_', basename)
     thumb_path = str(Path(output_dir) / f"{safe_basename}_thumb.jpg")
     ext = Path(file_path).suffix.lower()
+    media_exts = get_media_extensions()
     image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
 
     if ext in image_exts:
@@ -51,6 +52,10 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
             return thumb_path
         except Exception as e:
             logger.debug(f"Pillow failed for {file_path}, falling back to ffmpeg: {e}")
+
+    # 只对视频文件尝试 ffmpeg 提取首帧；音频和文档等跳过
+    if ext not in media_exts['video']:
+        return None
 
     cmd = [get_ffmpeg_path(), '-i', file_path, '-vframes', '1', '-q:v', '2', thumb_path, '-y']
     try:

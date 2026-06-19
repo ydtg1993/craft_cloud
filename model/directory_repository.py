@@ -141,6 +141,19 @@ class DirectoryRepository:
         finally:
             session.rollback()
 
+    def find_dir_id_by_channel(self, channel_id):
+        """根据 channel_id 反向查找目录 ID（用于碰撞检测）。"""
+        if not channel_id or channel_id == "me":
+            return None
+        session = self._session()
+        try:
+            row = session.execute(
+                select(Directory.id).where(Directory.channel_id == str(channel_id))
+            ).scalar_one_or_none()
+            return row if row else None
+        finally:
+            session.rollback()
+
     def set_directory_channel(self, dir_id, channel_id, _bg=False):
         with db_write_guard(timeout=None if _bg else 5.0):
             session = self._session()

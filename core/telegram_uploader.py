@@ -128,7 +128,15 @@ class TelethonUploader:
                 current = parent_id
 
         if top_dir_name == tr("Root"):
-            return "me"
+            # dir_id != 0 说明树走查失败但 caller 知道实际名称，用原始名创建频道
+            if dir_id != 0 and dir_name and dir_name != tr("Root"):
+                logger.warning(
+                    f"[Upload] 目录树走查未找到根级目录 (dir_id={dir_id})，"
+                    f"回退使用原始名称: {dir_name}"
+                )
+                top_dir_name = dir_name
+            else:
+                return "me"
 
         # 2. 无锁快速路径 — 频道已存在且有效
         existing = db.dirs.get_directory_channel(top_dir_id)

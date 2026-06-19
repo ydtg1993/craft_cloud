@@ -110,6 +110,7 @@ class BaseSyncTask:
         """验证频道是否可访问，不可访问则触发重建。
 
         频道已在配置时创建，这里只做验证 + 按需重建。
+        如果目录无频道（异步创建未完成或失败），主动触发重建。
         """
         if target_dir_id == 0:
             return target_dir_id
@@ -120,9 +121,18 @@ class BaseSyncTask:
             return None
 
         dir_exists = self.db.directory_exists(target_dir_id)
+        dir_name = "?"
         old_channel = None
         if dir_exists:
             old_channel = self.db.dirs.get_directory_channel(target_dir_id)
+            info = self.db.get_directory_info(target_dir_id)
+            dir_name = info.name if info else "?"
+
+        logger.info(
+            f"[{self._log_tag}] 频道验证: target_dir_id={target_dir_id}, "
+            f"name={dir_name}, exists={dir_exists}, channel={old_channel}, "
+            f"folder={self.folder_path}"
+        )
 
         if not dir_exists:
             # 目录记录丢失（异常情况），触发重建
@@ -130,9 +140,12 @@ class BaseSyncTask:
             return self._rebuild_channel(target_dir_id, telethon_cfg)
 
         if not old_channel or old_channel == "me":
-            # 频道尚未创建或指向 Saved Messages，提示需要配置
-            logger.warning(f"[{self._log_tag}] 目录 {target_dir_id} 无有效频道 (channel={old_channel})")
-            return target_dir_id
+            # 频道尚未创建（异步创建失败或未完成）→ 主动创建，防止依赖上传时的隐式创建
+            logger.warning(
+                f"[{self._log_tag}] 目录 {target_dir_id} ({dir_name}) 无有效频道 "
+                f"(channel={old_channel})，主动触发频道创建"
+            )
+            return self._rebuild_channel(target_dir_id, telethon_cfg)
 
         async def _check():
             try:
@@ -240,9 +253,15 @@ class BaseSyncTask:
     # ── 目录名查询 ────────────────────────────────────────────
 
     def _get_dir_name(self, dir_id):
-        """获取目录的显示名称（dir_id=0 为 Root 抽象层）。"""
+        """获取目录的显示名称（dir_id=0 为 Root 抽象层）。
+
+        优先用 get_directory_info（直接主键查找），失败时回退到路径查找。
+        """
         if dir_id == 0:
             return tr("Root")
+        info = self.db.get_directory_info(dir_id)
+        if info and info.name:
+            return info.name
         path = self.db.dirs.get_path_to_directory(dir_id)
         return path[-1][1] if path else tr("Root")
 
@@ -276,6 +295,36 @@ class BaseSyncTask:
             self._start_client()
 
             target_dir_id = folder_config.get("target_dir_id", 0)
+            # 安全检查：确保 target_dir_id 指向的是同步目录（is_sync=1）
+            if target_dir_id != 0:
+                info = self.db.get_directory_info(target_dir_id)
+                if not info:
+                    # 目录记录丢失（可能被手动删除），触发重建
+                    logger.warning(
+                        f"[{self._log_tag}] target_dir_id={target_dir_id} 在数据库中不存在，"
+                        f"触发重建。folder={self.folder_path}"
+                    )
+                    target_dir_id = self._rebuild_channel(target_dir_id, telethon_cfg)
+                    if target_dir_id is None:
+                        logger.error(f"[{self._log_tag}] 重建失败，放弃本次同步")
+                        self.signals.error.emit(tr("Cannot prepare sync directory, aborting"))
+                        return
+                elif info.is_sync != 1:
+                    logger.error(
+                        f"[{self._log_tag}] target_dir_id={target_dir_id} ({info.name}) "
+                        f"is_sync={info.is_sync}，不是同步目录！这会导致文件上传到错误频道。"
+                        f"folder={self.folder_path}，强制重建同步目录"
+                    )
+                    # 该目录是手动文件夹，不能用于自动同步 → 创建新的同步目录
+                    channel_name = folder_config.get("channel_name") or Path(self.folder_path).name
+                    new_id = self.db.dirs.add_directory(channel_name, parent_id=0, is_sync=1, _bg=True)
+                    folder_config["target_dir_id"] = new_id
+                    self.config_manager.config["auto_sync_settings"]["folders"][self.folder_path] = folder_config
+                    self.config_manager.save()
+                    target_dir_id = new_id
+                    logger.info(
+                        f"[{self._log_tag}] 已创建新同步目录: id={new_id}, name={channel_name}"
+                    )
             target_dir_id = self._validate_and_rebuild_channel(target_dir_id, telethon_cfg)
             if target_dir_id is None:
                 msg = tr("Cannot prepare sync directory, aborting")

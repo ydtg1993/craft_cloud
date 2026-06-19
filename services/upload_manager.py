@@ -176,9 +176,17 @@ class UploadManager(QObject):
         return self.db.users.get_active_credentials()
 
     def _get_dir_name(self, dir_id):
-        """获取目录的显示名称（dir_id=0 为 Root 抽象层，不应作为上传目标）。"""
+        """获取目录的显示名称（dir_id=0 为 Root 抽象层，不应作为上传目标）。
+
+        优先用 get_directory_info（直接主键查找，不受递归路径缓存影响），
+        仅在查找失败时回退到 get_path_to_directory。
+        """
         if dir_id == 0:
             return tr("Root")
+        info = self.db.get_directory_info(dir_id)
+        if info and info.name:
+            return info.name
+        # Fallback: 递归路径查找
         path = self.db.dirs.get_path_to_directory(dir_id)
         return path[-1][1] if path else tr("Root")
 

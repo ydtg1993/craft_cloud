@@ -12,10 +12,51 @@ from core.translator import tr
 
 # ── 单实例锁 ─────────────────────────────────────────────────
 _instance_lock_path = None
+_instance_mutex_handle = None  # Windows: kernel mutex handle
+
+
+def _acquire_lock_windows() -> bool:
+    """Windows: 使用命名 Mutex 实现单实例锁。
+
+    Mutex 是内核对象，进程退出时 OS 自动释放，不依赖 atexit 清理。
+    """
+    global _instance_mutex_handle
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateMutexW.argtypes = [wintypes.LPCVOID, wintypes.BOOL, wintypes.LPCWSTR]
+    kernel32.CreateMutexW.restype = wintypes.HANDLE
+    kernel32.GetLastError.restype = wintypes.DWORD
+
+    ERROR_ALREADY_EXISTS = 183
+
+    mutex_name = "Local\\CraftCloud_SingleInstance_Mutex"
+    handle = kernel32.CreateMutexW(None, False, mutex_name)
+    _instance_mutex_handle = handle
+
+    if handle and kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        # 已有另一个实例持有该 mutex
+        if handle:
+            kernel32.CloseHandle(handle)
+        _instance_mutex_handle = None
+        return False
+
+    return handle != 0
+
+
+def _release_lock_windows():
+    """释放 Windows mutex（仅用于正常退出；崩溃时 OS 自动回收）。"""
+    global _instance_mutex_handle
+    if _instance_mutex_handle:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        kernel32.CloseHandle(_instance_mutex_handle)
+        _instance_mutex_handle = None
 
 
 def _is_process_running(pid: int) -> bool:
-    """检查指定 PID 的进程是否仍在运行（跨平台）。"""
+    """检查指定 PID 的进程是否仍在运行（跨平台，仅非 Windows 使用）。"""
     if sys.platform == "win32":
         try:
             import ctypes
@@ -36,16 +77,39 @@ def _is_process_running(pid: int) -> bool:
             return False
 
 
+def _cleanup_stale_pid_lock():
+    """清理旧版本残留的 PID 锁文件（迁移到 Mutex 后不再需要）。"""
+    try:
+        if getattr(sys, 'frozen', False):
+            data_dir = Path(sys.executable).parent / "data"
+        else:
+            data_dir = Path(__file__).resolve().parent.parent / "data"
+        lock_file = data_dir / ".instance.lock"
+        if lock_file.exists():
+            lock_file.unlink()
+    except OSError:
+        pass
+
+
 def acquire_single_instance_lock() -> bool:
     """获取单实例锁，确保只有一个程序实例在运行。
 
-    使用 PID 锁文件方式：启动时写入当前 PID，启动前检查已有 PID
-    是否仍在运行。进程崩溃时锁文件自动变为过期，下次启动会清理。
+    Windows: 命名 Mutex（内核对象，崩溃/强杀自动释放，无 PID 复用问题）
+    其他平台: PID 锁文件 + atexit 清理
 
     Returns:
         True:  成功获取锁，当前是唯一实例
         False: 已有实例在运行，应退出
     """
+    if sys.platform == "win32":
+        # 清理旧版本残留的 PID 锁文件（现在改用 Mutex）
+        _cleanup_stale_pid_lock()
+        result = _acquire_lock_windows()
+        if result:
+            atexit.register(_release_lock_windows)
+        return result
+
+    # ── 非 Windows：PID 锁文件 ────────────────────────────────
     global _instance_lock_path
 
     if getattr(sys, 'frozen', False):
@@ -82,7 +146,7 @@ def acquire_single_instance_lock() -> bool:
 
 
 def _release_single_instance_lock():
-    """退出时清理锁文件。"""
+    """退出时清理锁文件（非 Windows）。"""
     global _instance_lock_path
     if _instance_lock_path and _instance_lock_path.exists():
         try:
