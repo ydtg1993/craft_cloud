@@ -5,6 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title data-i18n="pageTitle">CraftCloud - Turn Telegram into Your Private Cloud Drive</title>
 
+    <!-- ========== SEO Meta Tags ========== -->
+    <meta name="description" content="CraftCloud turns Telegram into your unlimited private cloud drive with auto-sync, file management, drag-and-drop, search, and bilingual UI. Free, open-source, Windows desktop app.">
+    <meta name="keywords" content="CraftCloud, Telegram cloud, cloud drive, file sync, auto sync, Telegram storage, private cloud, Windows desktop app, PySide6, open source cloud">
+    <meta name="author" content="CraftCloud">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <link rel="canonical" href="https://github.com/ydtg1993/craft_cloud">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://github.com/ydtg1993/craft_cloud">
+    <meta property="og:title" content="CraftCloud - Turn Telegram into Your Private Cloud Drive">
+    <meta property="og:description" content="Turn Telegram into your unlimited personal cloud drive with auto-sync, multi-device management, secure and fast. Free & open-source.">
+    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="CraftCloud">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://github.com/ydtg1993/craft_cloud">
+    <meta name="twitter:title" content="CraftCloud - Turn Telegram into Your Private Cloud Drive">
+    <meta name="twitter:description" content="Turn Telegram into your unlimited personal cloud drive. Auto-sync, drag-and-drop, file preview, smart search. Free & open-source Windows app.">
+    <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png">
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "CraftCloud",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Windows 10, Windows 11",
+      "description": "Turn Telegram into your unlimited private cloud drive with auto-sync and file management.",
+      "url": "https://github.com/ydtg1993/craft_cloud",
+      "image": "https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png",
+      "author": {
+        "@type": "Person",
+        "name": "CraftCloud"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
     <!-- Google Fonts: 8-bit pixel typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -696,6 +744,28 @@
             border-top: 4px solid var(--gray-dark);
             margin-top: 20px;
         }
+        .footer-links {
+            margin-top: 18px;
+            font-family: var(--font-pixel);
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .footer-links a {
+            color: var(--cyan);
+            text-decoration: none;
+            text-shadow: 2px 2px 0 #000;
+            padding: 4px 8px;
+            transition: none;
+        }
+        .footer-links a:hover {
+            color: var(--pink);
+            text-shadow: 2px 2px 0 var(--pink-dark);
+        }
+        .footer-sep {
+            color: var(--gray-dark);
+            margin: 0 12px;
+        }
 
         /* ============================================================
            LIGHTBOX — pixel frame
@@ -1078,7 +1148,7 @@
             <h2 class="section-title" data-i18n="download_title">Download Now</h2>
             <p data-i18n="download_desc">Completely free, open-source project. Windows installer with custom install path and auto-start support.</p>
             <div style="display: flex; justify-content: center; flex-wrap: wrap; align-items: center;">
-                <a href="https://github.com/ydtg1993/craft_cloud/releases/download/v2.0.0/CraftCloud_Setup.exe" class="btn btn-primary" target="_blank" data-i18n="download_btn">
+                <a href="https://github.com/ydtg1993/craft_cloud/releases/download/v2.0.0/CraftCloud_v2.0.0_Setup.exe" class="btn btn-primary" target="_blank" data-i18n="download_btn">
                     ⬇️ Download Installer
                 </a>
                 <button class="btn btn-outline" id="show-guide-btn" data-i18n="guide_btn">
@@ -1093,6 +1163,11 @@
         <!-- ==================== FOOTER ==================== -->
         <footer>
             <p data-i18n="footer_text">© 2025 CraftCloud. Built with PySide6 + Pyrogram. Please comply with Telegram's Terms of Service.</p>
+            <p class="footer-links">
+                <a href="https://github.com/ydtg1993/craft_cloud" target="_blank" rel="noopener" title="GitHub">🐙 GitHub</a>
+                <span class="footer-sep">│</span>
+                <a href="https://www.youtube.com/watch?v=jATn2AZiRPg" target="_blank" rel="noopener" title="YouTube Demo">▶ YouTube</a>
+            </p>
         </footer>
     </div>
 
