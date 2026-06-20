@@ -31,6 +31,9 @@ class FileTableView(QTableView):
         self.highlighted_row = -1          # 当前高亮的行号，-1 表示无高亮
         self._drag_start_pos = None
         self.setItemDelegate(FolderTableHighlightDelegate(self))
+        # 让 viewport 自填充背景，防止打包后 QFluentWidgets 主题下
+        # 框选矩形（rubber band）移动时旧位置不能正确擦除导致残影
+        self.viewport().setAutoFillBackground(True)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

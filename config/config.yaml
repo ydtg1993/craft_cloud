@@ -1,8 +1,8 @@
 telethon:
-  user_id: 1
-  logged_in: true
-download_path: C:/Users/pcuser/Desktop
-language: zh
+  user_id: 0
+  logged_in: false
+download_path: C:/Users
+language: en
 theme: light
 view_mode: icon
 clipboard_enabled: true
@@ -15,10 +15,6 @@ upload_limit_settings:
   max_single_file_size_gb: 1.8
   reset_hour: 0
 auto_sync_settings:
-  enabled: true
+  enabled: false
   folders:
-    C:/Users/pcuser/Desktop/Sync Folder:
-      interval_type: minutely
-      interval_value: 3
-      target_dir_id: 2
-      channel_name: Sync Folder
+

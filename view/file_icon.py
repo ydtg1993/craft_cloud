@@ -28,6 +28,9 @@ class FileIconView(QListWidget):
         self.move_file_callback = None
         self._highlight_item = None
         self.setItemDelegate(IconHighlightDelegate(self))
+        # 让 viewport 自填充背景，防止打包后 QFluentWidgets 主题下
+        # 框选矩形（rubber band）移动时旧位置不能正确擦除导致残影
+        self.viewport().setAutoFillBackground(True)
 
         # ---------- 图标视图显示优化 ----------
         self.setViewMode(QListView.IconMode)
