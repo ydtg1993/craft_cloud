@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "craft_cloud"
-version = "2.0.0"
+version = "2.7.7"
 description = "CraftCloud — 将 Telegram 作为无限云存储的桌面客户端"
 readme = "docs/readme.md"
 license = {file = "docs/LICENSE.txt"}

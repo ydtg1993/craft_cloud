@@ -1,6 +1,6 @@
 [Setup]
 AppName=CraftCloud
-AppVersion=2.0.0
+AppVersion=2.7.7
 DefaultDirName={autopf}\CraftCloud
 DefaultGroupName=CraftCloud
 OutputDir=.\installer_output
@@ -29,7 +29,7 @@ Type: files; Name: "{app}\data\.instance.lock"
 Name: "startup"; Description: "Start CraftCloud on system startup"; GroupDescription: "System startup"; Flags: checkedonce
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CraftCloud"; ValueData: "{app}\CraftCloud.exe"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CraftCloud"; ValueData: "{app}\CraftCloud.exe"; Flags: uninsdeletevalue; Tasks: startup
 
 [Icons]
 Name: "{userdesktop}\CraftCloud"; Filename: "{app}\CraftCloud.exe"
