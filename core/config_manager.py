@@ -21,7 +21,7 @@ class TelethonConfig(BaseModel):
 class UploadLimitConfig(BaseModel):
     enabled: bool = True
     max_daily_size_gb: float = 200.0
-    max_daily_files: int = 500
+    max_daily_files: int = 800
     max_single_file_size_gb: float = 1.8
     reset_hour: int = 0
 
@@ -35,7 +35,7 @@ class SyncFolderConfig(BaseModel):
 
 class AutoSyncConfig(BaseModel):
     enabled: bool = False
-    upload_interval: int = 1  # seconds between file uploads (1-60)
+    upload_interval: int = 15  # seconds between file uploads (1-60)
     folders: dict[str, SyncFolderConfig] = Field(default_factory=dict)
 
 
