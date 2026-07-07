@@ -3,7 +3,7 @@
     QApplication, QStyle, QHeaderView, QFrame
 )
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
-from PySide6.QtCore import Signal, Qt, QSize, QRect, QPoint
+from PySide6.QtCore import Signal, Qt, QSize, QRect, QPoint, QTimer
 from qfluentwidgets import FluentIcon, RoundMenu, Action, ScrollArea
 from view.file_table import FileTableView
 from view.file_icon import FileIconView
@@ -78,17 +78,22 @@ class FileViewStack(QWidget):
         self.table_view.setTextElideMode(Qt.ElideRight)
 
     def _sync_content_size(self):
-        """根据当前视图内容计算所需尺寸，让 ScrollArea 正确显示滚动条。"""
+        """根据当前视图内容计算所需尺寸，让 ScrollArea 正确显示滚动条。
+
+        内容不足时撑满 viewport，内容溢出时自然出现滚动条。
+        """
         current = self.stack.currentWidget()
         if current is self.table_scroll:
             vp_w = self.table_scroll.viewport().width()
+            vp_h = self.table_scroll.viewport().height() or self.table_scroll.height()
             h = self.table_view.horizontalHeader().height()
             for row in range(self.file_model.rowCount()):
                 h += self.table_view.rowHeight(row)
-            h = max(h + 2, 100)
+            h = max(h + 2, vp_h)
             self.table_view.resize(max(vp_w, 1), h)
         elif current is self.icon_scroll:
             vp_w = self.icon_scroll.viewport().width()
+            vp_h = self.icon_scroll.viewport().height() or self.icon_scroll.height()
             count = self.icon_view.count()
             if count > 0:
                 grid_w = self.icon_view.gridSize().width()
@@ -97,8 +102,12 @@ class FileViewStack(QWidget):
                 rows = (count + cols - 1) // cols
                 h = rows * (self.icon_view.gridSize().height() + spacing) + 30
             else:
-                h = 100
-            self.icon_view.resize(max(vp_w, 1), max(h, 100))
+                h = 0
+            self.icon_view.resize(max(vp_w, 1), max(h, vp_h))
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self._sync_content_size)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

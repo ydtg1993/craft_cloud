@@ -1,8 +1,9 @@
 """AboutPage — 关于页面，展示软件信息、开发者、功能、许可证、致谢和更新日志。"""
+import shiboken6
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame)
 from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, SubtitleLabel,
                             GroupHeaderCardWidget, HeaderCardWidget, FluentIcon,
-                            HyperlinkButton, ScrollArea, Theme)
+                            HyperlinkButton, ScrollArea, Theme, qconfig)
 from core.translator import tr
 from qfluentwidgets import theme as qfw_theme
 
@@ -89,8 +90,7 @@ class AboutPage(QWidget):
         card_layout.setContentsMargins(0, 0, 0, 0)
         card_layout.setSpacing(10)
 
-        is_dark = qfw_theme() == Theme.DARK
-        self.text_color = "#FFFFFF" if is_dark else "#000000"
+        self._theme_labels = []  # 需要随主题切换颜色的 QLabel
 
         self._build_app_info(card_layout)
         self._build_developer(card_layout)
@@ -102,6 +102,9 @@ class AboutPage(QWidget):
         card_layout.addStretch()
         scroll.setWidget(container)
         layout.addWidget(scroll, 1)
+
+        self._apply_theme_colors()
+        qconfig.themeChanged.connect(self._apply_theme_colors)
 
     # ── 应用信息 ───────────────────────────────────────────────
     def _build_app_info(self, layout):
@@ -174,10 +177,9 @@ class AboutPage(QWidget):
         for feature in features:
             row = QLabel(feature)
             row.setWordWrap(True)
-            row.setStyleSheet(
-                f"QLabel {{ font-size: 13px; padding: 2px 0; color: {self.text_color}; }}"
-            )
+            base = "font-size: 13px; padding: 2px 0;"
             card.vBoxLayout.addWidget(row)
+            self._theme_labels.append((row, base))
         card.setContentsMargins(10, 10, 10, 10)
         layout.addWidget(card)
 
@@ -232,9 +234,8 @@ class AboutPage(QWidget):
             for change in changes:
                 item = CaptionLabel(f"  •  {change}")
                 item.setWordWrap(True)
-                item.setStyleSheet(
-                    f"QLabel {{ font-size: 12px; color: {self.text_color}; }}")
                 card.vBoxLayout.addWidget(item)
+                self._theme_labels.append((item, "font-size: 12px;"))
 
             # 版本之间加一点间距
             spacer = QWidget()
@@ -242,3 +243,12 @@ class AboutPage(QWidget):
             card.vBoxLayout.addWidget(spacer)
         card.setContentsMargins(10, 10, 10, 10)
         layout.addWidget(card)
+
+    # ── 主题适配 ───────────────────────────────────────────────
+    def _apply_theme_colors(self):
+        """主题切换时刷新 feature / changelog 标签的文字颜色。"""
+        is_dark = qfw_theme() == Theme.DARK
+        c = "#FFFFFF" if is_dark else "#000000"
+        for lbl, base in self._theme_labels:
+            if shiboken6.isValid(lbl):
+                lbl.setStyleSheet(f"QLabel {{ {base} color: {c}; }}")

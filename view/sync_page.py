@@ -8,9 +8,11 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                 QScrollArea, QFrame)
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
+import shiboken6
 from qfluentwidgets import (GroupHeaderCardWidget, HeaderCardWidget,
                             TitleLabel, BodyLabel, CaptionLabel,
-                            ProgressBar, FluentIcon, PushButton)
+                            ProgressBar, FluentIcon, PushButton, qconfig, Theme)
+from qfluentwidgets import theme as qfw_theme
 from core.utils import format_file_size
 from core.translator import tr
 from model.shared_types import sync_status_display
@@ -26,7 +28,12 @@ STATUS_COLORS = {
 }
 
 VALUE_STYLE = "QLabel { font-size: 13px; }"
-HINT_STYLE = "QLabel { color: rgba(255,255,255,0.45); font-size: 11px; }"
+
+def _hint_style() -> str:
+    """返回当前主题下的 hint 标签样式。"""
+    is_dark = qfw_theme() == Theme.DARK
+    c = "rgba(255,255,255,0.45)" if is_dark else "rgba(0,0,0,0.45)"
+    return f"QLabel {{ color: {c}; font-size: 11px; }}"
 
 
 def _status_color(s):
@@ -114,12 +121,12 @@ class SyncFolderCard(GroupHeaderCardWidget):
 
         pct = (summary.synced_files / max(summary.total_files, 1)) * 100
         pct_label = CaptionLabel(f"{pct:.0f}%")
-        pct_label.setStyleSheet(HINT_STYLE)
+        pct_label.setStyleSheet(_hint_style())
         hint_layout.addWidget(pct_label)
 
         if summary.last_sync_time:
             time_label = CaptionLabel(tr("Last sync: ") + summary.last_sync_time)
-            time_label.setStyleSheet(HINT_STYLE)
+            time_label.setStyleSheet(_hint_style())
             hint_layout.addWidget(time_label)
 
         hint_layout.addStretch()
@@ -209,20 +216,38 @@ class SyncPage(QWidget):
 
         self._container = QWidget()
         self._container.setObjectName("syncDashboardContainer")
-        self._container.setStyleSheet("#syncDashboardContainer { background: rgba(15, 15, 15, 0.08); }")
         self._card_layout = QVBoxLayout(self._container)
         self._card_layout.setContentsMargins(0, 0, 0, 0)
         self._card_layout.setSpacing(10)
 
         self._empty_label = BodyLabel(self.tr("No sync folders configured."))
         self._empty_label.setAlignment(Qt.AlignCenter)
-        self._empty_label.setStyleSheet(
-            "QLabel { color: rgba(255,255,255,0.35); padding: 40px 0; }")
         self._card_layout.addWidget(self._empty_label)
         self._card_layout.addStretch()
 
         scroll.setWidget(self._container)
         layout.addWidget(scroll, 1)
+
+        self._apply_theme_colors()
+        qconfig.themeChanged.connect(self._apply_theme_colors)
+
+    def _apply_theme_colors(self):
+        """根据当前主题刷新容器和空状态标签颜色。"""
+        is_dark = qfw_theme() == Theme.DARK
+        bg = "rgba(255,255,255,0.06)" if is_dark else "rgba(0,0,0,0.04)"
+        text_c = "rgba(255,255,255,0.35)" if is_dark else "rgba(0,0,0,0.35)"
+        self._container.setStyleSheet(
+            f"#syncDashboardContainer {{ background: {bg}; }}")
+        if self._empty_label and shiboken6.isValid(self._empty_label):
+            self._empty_label.setStyleSheet(
+                f"QLabel {{ color: {text_c}; padding: 40px 0; }}")
+        # 已存在的卡片 hint 标签也刷新
+        for card in list(self._cards.values()):
+            if not shiboken6.isValid(card):
+                continue
+            if hasattr(card, '_pct_label') and card._pct_label:
+                card._pct_label.setStyleSheet(_hint_style())
+            # SyncFolderCard 里 time_label 不存引用，下次 refresh_all 重建即可
 
     def refresh_all(self, summaries):
         self._cards.clear()
@@ -238,9 +263,8 @@ class SyncPage(QWidget):
         if not summaries:
             self._empty_label = BodyLabel(self.tr("No sync folders configured."))
             self._empty_label.setAlignment(Qt.AlignCenter)
-            self._empty_label.setStyleSheet(
-                "QLabel { color: rgba(255,255,255,0.35); padding: 40px 0; }")
             self._card_layout.addWidget(self._empty_label)
+            self._apply_theme_colors()
             self._card_layout.addStretch()
             return
 
