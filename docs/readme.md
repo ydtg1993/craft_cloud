@@ -19,6 +19,14 @@
 
 ---
 
+<p align="center">
+  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
+    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
+  </a>
+</p>
+
+---
+
 ## Preview
 
 <table>
@@ -33,14 +41,6 @@
     <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
   </tr>
 </table>
-
----
-
-<p align="center">
-  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
-    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
-  </a>
-</p>
 
 ---
 
