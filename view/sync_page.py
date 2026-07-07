@@ -208,6 +208,8 @@ class SyncPage(QWidget):
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         self._container = QWidget()
+        self._container.setObjectName("syncDashboardContainer")
+        self._container.setStyleSheet("#syncDashboardContainer { background: transparent; }")
         self._card_layout = QVBoxLayout(self._container)
         self._card_layout.setContentsMargins(0, 0, 0, 0)
         self._card_layout.setSpacing(10)

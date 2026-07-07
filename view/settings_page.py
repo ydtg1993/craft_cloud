@@ -8,7 +8,7 @@ from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, PushButton, Lin
                             SwitchButton, SpinBox, DoubleSpinBox, Slider, ListWidget, InfoBar,
                             MessageBoxBase, SubtitleLabel, ComboBox, MessageBox,
                             SegmentedWidget, GroupHeaderCardWidget, FluentIcon,
-                            ExpandSettingCard, ToolButton)
+                            ExpandSettingCard, ToolButton, setTheme, Theme)
 from qfluentwidgets.components.dialog_box.dialog import Dialog
 from core.config_manager import ConfigManager
 from core.telegram_uploader import TelethonUploader
@@ -513,6 +513,23 @@ class SettingsPage(QWidget):
             lang_widget,
         )
 
+        # 主题切换
+        theme_widget = QWidget()
+        theme_layout = QHBoxLayout(theme_widget)
+        theme_layout.setContentsMargins(0, 0, 0, 0)
+        self.theme_switch = SwitchButton()
+        is_dark = self.config.get("theme", "light") == "dark"
+        self.theme_switch.setChecked(is_dark)
+        self.theme_switch.checkedChanged.connect(self._on_theme_changed)
+        theme_layout.addWidget(self.theme_switch)
+        theme_layout.addStretch()
+        card.addGroup(
+            FluentIcon.PALETTE,
+            self.tr("Dark Theme"),
+            self.tr("Switch between light and dark appearance"),
+            theme_widget,
+        )
+
         return card
 
     # ==================== Upload Limit 页面 ====================
@@ -690,6 +707,13 @@ class SettingsPage(QWidget):
         )
         if msg_box.exec():
             self._restart_app()
+
+    def _on_theme_changed(self, checked: bool):
+        """立即切换亮色/暗色主题。"""
+        new_theme = "dark" if checked else "light"
+        self.config["theme"] = new_theme
+        self.config_manager.save()
+        setTheme(Theme.DARK if checked else Theme.LIGHT)
 
     @staticmethod
     def _restart_app():

@@ -5,23 +5,19 @@
   - HeaderCardWidget：面包屑(header) + FileViewStack(body)，自动撑满
   - 底部状态栏卡片（25px）：当日云盘用量统计
 """
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame, QApplication
+from PySide6.QtGui import QColor, QPalette
 from qfluentwidgets import (FluentIcon, BreadcrumbBar, CardWidget, Theme,
-                            HeaderCardWidget, ToolButton, LineEdit, ComboBox)
+                            HeaderCardWidget, ToolButton, LineEdit, ComboBox, qconfig)
 from qfluentwidgets import theme as qfw_theme
+from qfluentwidgets.common.style_sheet import FluentStyleSheet
 from view.file_view_stack import FileViewStack
 
 
 def _card() -> CardWidget:
     """创建统一样式的圆角卡片。"""
     card = CardWidget()
-    card.setStyleSheet("""
-        CardWidget {
-            border-radius: 8px;
-            border: none;
-        }
-    """)
     return card
 
 
@@ -86,17 +82,13 @@ class HomePage(QWidget):
         toolbar_card_layout.addWidget(self.date_btn)
 
         main_layout.addWidget(toolbar_card)
+        self._toolbar_card = toolbar_card
 
         # ================================================================
         # 2. HeaderCardWidget：面包屑 + 文件视图 (中间主区域，自动撑满)
         # ================================================================
         content_card = HeaderCardWidget(self)
-        content_card.setStyleSheet("""
-            HeaderCardWidget {
-                border-radius: 8px;
-                border: none;
-            }
-        """)
+        self._content_card = content_card
 
         # header：隐藏默认标题，放入面包屑
         content_card.headerLabel.hide()
@@ -108,18 +100,31 @@ class HomePage(QWidget):
         # view：放入 FileViewStack，去掉内边距
         content_card.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.file_view = FileViewStack(file_manager, parent)
-        # 去除 FileViewStack 内部的黑色边框
-        self.file_view.setStyleSheet("""
+
+        # 统一样式：去除边框 + 透明背景（让卡片背景色透出）
+        _file_view_qss = """
             QStackedWidget, QTableView, QListWidget {
                 border: none;
                 outline: none;
+                background-color: transparent;
             }
-        """)
+            QTableView::item, QListWidget::item {
+                background-color: transparent;
+            }
+            QHeaderView::section {
+                background-color: transparent;
+            }
+        """
+        self.file_view.setStyleSheet(_file_view_qss)
         self.file_view.stack.setStyleSheet("border: none;")
         self.file_view.table_view.setFrameShape(QFrame.Shape.NoFrame)
         self.file_view.icon_view.setFrameShape(QFrame.Shape.NoFrame)
-        content_card.viewLayout.addWidget(self.file_view)
 
+        # 去除 viewport 默认背景
+        self.file_view.table_view.viewport().setStyleSheet("background: transparent;")
+        self.file_view.icon_view.viewport().setStyleSheet("background: transparent;")
+
+        content_card.viewLayout.addWidget(self.file_view)
         main_layout.addWidget(content_card, 1)
 
         # ================================================================
@@ -153,8 +158,50 @@ class HomePage(QWidget):
         status_layout.addStretch()
         status_card_layout.addWidget(status_bar)
         main_layout.addWidget(status_card)
+        self._status_card = status_card
 
-        # 统一样式：状态栏标签字体，颜色跟随主题
+        # 初始化主题适配
+        self._refresh_view_theme()
+        self._apply_status_style()
+
+        # 监听主题变更
+        qconfig.themeChanged.connect(self._on_theme_changed)
+
+    def _refresh_view_theme(self):
+        """更新 file_view 内部 QTableView/QListWidget 的主题相关颜色。"""
+        is_dark = qfw_theme() == Theme.DARK
+        text_color = QColor(255, 255, 255) if is_dark else QColor(0, 0, 0)
+        highlight_color = QColor(255, 255, 255, 30) if is_dark else QColor(0, 0, 0, 20)
+
+        p = self.file_view.table_view.palette()
+        p.setColor(QPalette.Base, Qt.transparent)
+        p.setColor(QPalette.Text, text_color)
+        p.setColor(QPalette.Highlight, highlight_color)
+        self.file_view.table_view.setPalette(p)
+
+        p2 = self.file_view.icon_view.palette()
+        p2.setColor(QPalette.Base, Qt.transparent)
+        p2.setColor(QPalette.Text, text_color)
+        p2.setColor(QPalette.Highlight, highlight_color)
+        self.file_view.icon_view.setPalette(p2)
+
+    def _on_theme_changed(self):
+        """主题切换时更新所有卡片和内部视图的主题颜色。"""
+        # 普通 CardWidget：直接设色并重绘
+        for card in (self._toolbar_card, self._status_card):
+            card.backgroundColorAni.stop()
+            card.setBackgroundColor(card._normalBackgroundColor())
+            card.update()
+
+        # HeaderCardWidget：背景 + 重新应用主题 QSS
+        self._content_card.backgroundColorAni.stop()
+        self._content_card.setBackgroundColor(
+            self._content_card._normalBackgroundColor())
+        FluentStyleSheet.CARD_WIDGET.apply(self._content_card)
+        self._content_card.update()
+
+        # 文件列表视图：palette + 状态栏
+        self._refresh_view_theme()
         self._apply_status_style()
 
     def _apply_status_style(self):

@@ -61,12 +61,6 @@ class _SectionCard(GroupHeaderCardWidget):
     def __init__(self, title: str, parent=None):
         HeaderCardWidget.__init__(self, parent)
         self.setTitle(title)
-        self.setStyleSheet("""
-            GroupHeaderCardWidget {
-                border-radius: 8px;
-                border: none;
-            }
-        """)
 
 
 class AboutPage(QWidget):
@@ -88,6 +82,8 @@ class AboutPage(QWidget):
         scroll.enableTransparentBackground()
 
         container = QWidget()
+        container.setObjectName("aboutScrollContainer")
+        container.setStyleSheet("#aboutScrollContainer { background: transparent; }")
         card_layout = QVBoxLayout(container)
         card_layout.setContentsMargins(0, 0, 0, 0)
         card_layout.setSpacing(10)

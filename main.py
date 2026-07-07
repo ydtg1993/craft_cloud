@@ -58,6 +58,10 @@ def main():
     app_translator = AppTranslator(locale)
     app.installTranslator(app_translator)
 
+    # 应用保存的主题设置
+    saved_theme = config_mgr.config.get("theme", "light")
+    setTheme(Theme.DARK if saved_theme == "dark" else Theme.LIGHT)
+
     # 强制处理一次事件，确保 qfluentwidgets 内部完全初始化
     app.processEvents()
 
