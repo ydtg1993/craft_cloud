@@ -8,6 +8,7 @@ data/*.db-wal
 data/cache/
 data/logs/
 sessions/
+config/config.yaml
 
 # ── Legacy Runtime Artifacts (now moved to data/) ──────────────────
 app.log
