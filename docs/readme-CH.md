@@ -66,21 +66,6 @@
 
 <table>
   <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
-  </tr>
-</table>
-
-### 操作教程
-
-<table>
-  <tr>
     <td align="center"><b>登录</b></td>
     <td align="center"><b>文件操作</b></td>
     <td align="center"><b>自动同步</b></td>
