@@ -67,13 +67,16 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE, resource_id=None)
 
     cmd = [get_ffmpeg_path(), '-i', file_path, '-vframes', '1', '-q:v', '2', thumb_path, '-y']
     try:
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                        creationflags=_CREATION_FLAGS, check=True, timeout=10)
         if Path(thumb_path).exists():
             cache.set(cache_key, thumb_path)
             return thumb_path
     except FileNotFoundError:
         logger.warning("ffmpeg not found, skipping thumbnail generation.")
+    except subprocess.CalledProcessError as e:
+        stderr_tail = e.stderr.decode(errors="replace")[-200:] if e.stderr else "(no stderr)"
+        logger.warning(f"Failed to generate thumbnail for {file_path}: {stderr_tail}")
     except Exception as e:
         logger.warning(f"Failed to generate thumbnail for {file_path}: {e}")
     return None
@@ -121,13 +124,16 @@ def generate_media_clip(file_path, output_dir, is_audio=False, resource_id=None)
                clip_path, '-y']
 
     try:
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                        creationflags=_CREATION_FLAGS, check=True, timeout=120)
         if Path(clip_path).exists():
             cache.set(cache_key, clip_path)
             return clip_path
     except FileNotFoundError:
         logger.warning("ffmpeg not found, skipping clip generation.")
+    except subprocess.CalledProcessError as e:
+        stderr_tail = e.stderr.decode(errors="replace")[-200:] if e.stderr else "(no stderr)"
+        logger.warning(f"Failed to generate media clip for {file_path}: {stderr_tail}")
     except Exception as e:
         logger.warning(f"Failed to generate media clip for {file_path}: {e}")
     return None
@@ -218,7 +224,7 @@ def generate_image_preview(file_path, output_dir, resource_id=None):
 
             final_size = Path(preview_path).stat().st_size
             logger.debug(
-                f"[ImageCache] {basename}: {original_size/1024:.0f}KB → "
+                f"[ImageCache] {Path(file_path).name}: {original_size/1024:.0f}KB → "
                 f"{final_size/1024:.0f}KB "
                 f"({w}×{h}→{new_w}×{new_h}, q={target_quality})"
             )

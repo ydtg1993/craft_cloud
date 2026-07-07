@@ -36,15 +36,13 @@ class AppScheduler:
         return job.id
 
     def add_cron_job(self, func, cron_expr: str, job_id: str | None = None) -> str:
-        """Add a job with cron expression (e.g. '0 9 * * *' = daily at 9am)."""
-        parts = cron_expr.split()
-        trigger = CronTrigger(
-            minute=parts[0] if len(parts) > 0 else "*",
-            hour=parts[1] if len(parts) > 1 else "*",
-            day=parts[2] if len(parts) > 2 else "*",
-            month=parts[3] if len(parts) > 3 else "*",
-            day_of_week=parts[4] if len(parts) > 4 else "*",
-        )
+        """Add a job with cron expression (e.g. '0 9 * * *' = daily at 9am).
+
+        Uses APScheduler's built-in crontab parser which supports the full
+        cron syntax: ``*/5`` (step), ``1,15`` (list), ``1-5`` (range),
+        and month/day names.
+        """
+        trigger = CronTrigger.from_crontab(cron_expr)
         job = self._scheduler.add_job(func, trigger, id=job_id, replace_existing=True)
         logger.debug(f"Scheduled cron job '{job.id}': {cron_expr}")
         return job.id

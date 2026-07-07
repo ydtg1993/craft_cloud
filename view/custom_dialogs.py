@@ -3,6 +3,7 @@ from PySide6.QtCore import QDate, Qt
 from qfluentwidgets import (MessageBoxBase, SubtitleLabel, BodyLabel,
                             PushButton, DateEdit, ListWidget, LineEdit, ComboBox)
 from model.shared_types import SearchItemData
+from loguru import logger
 
 
 class DateSearchDialog(MessageBoxBase):
@@ -67,8 +68,11 @@ class AccountDialog(MessageBoxBase):
         v_layout.addWidget(BodyLabel(f"{self.tr('Username')}: {user_info.get('username', 'N/A')}"))
         v_layout.addWidget(BodyLabel(f"{self.tr('Phone')}: {user_info.get('phone', 'N/A')}"))
         v_layout.addWidget(BodyLabel(f"{self.tr('Telegram ID')}: {user_info.get('tg_id', 'N/A')}"))
+        # api_id 是公开的应用注册 ID，只有 api_hash 是敏感凭据
+        api_hash = user_info.get('api_hash', None)
+        api_hash_display = "********" if api_hash else "N/A"
         v_layout.addWidget(BodyLabel(f"{self.tr('Api Id')}: {user_info.get('api_id', 'N/A')}"))
-        v_layout.addWidget(BodyLabel(f"{self.tr('Api Hash')}: {user_info.get('api_hash', 'N/A')}"))
+        v_layout.addWidget(BodyLabel(f"{self.tr('Api Hash')}: {api_hash_display}"))
         logout_btn = PushButton(self.tr("Logout"))
         logout_btn.clicked.connect(lambda: (logout_callback(), self.accept()))
         v_layout.addWidget(logout_btn)
@@ -87,8 +91,8 @@ class AccountDialog(MessageBoxBase):
             if user:
                 return user
         except Exception:
-            pass
-        return {}
+            logger.warning("[AccountDialog] 无法加载活跃用户信息", exc_info=True)
+            return {}
 
 
 class RenameDialog(MessageBoxBase):

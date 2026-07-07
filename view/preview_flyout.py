@@ -322,11 +322,13 @@ class PreviewFlyoutView(MessageBoxBase):
         if self.is_video and self.video_widget:
             self.player.setVideoOutput(self.video_widget)
 
-        # 连接信号
-        self.player.positionChanged.connect(self._on_position_changed_ui)
-        self.player.durationChanged.connect(self._on_duration_changed_ui)
-        self.player.playbackStateChanged.connect(self._on_state_changed)
-        self.player.errorOccurred.connect(self._on_player_error)
+        # 连接信号并保存句柄，用于 _cleanup_player 精确断开
+        self._player_connections = [
+            self.player.positionChanged.connect(self._on_position_changed_ui),
+            self.player.durationChanged.connect(self._on_duration_changed_ui),
+            self.player.playbackStateChanged.connect(self._on_state_changed),
+            self.player.errorOccurred.connect(self._on_player_error),
+        ]
 
         # 设置媒体源
         self.player.setSource(QUrl.fromLocalFile(self.media_path))
@@ -498,14 +500,13 @@ class PreviewFlyoutView(MessageBoxBase):
     def _cleanup_player(self):
         if self.player:
             self.player.stop()
-            try:
-                self.player.positionChanged.disconnect()
-                self.player.durationChanged.disconnect()
-                self.player.playbackStateChanged.disconnect()
-                self.player.errorOccurred.disconnect()
-            except Exception as e:
-                from loguru import logger
-                logger.debug(f"播放器信号断开失败: {e}")
+            # 精确断开通过 _init_qt_player 注册的信号连接
+            for conn in getattr(self, "_player_connections", []):
+                try:
+                    self.player.disconnect(conn)
+                except (RuntimeError, TypeError):
+                    pass  # 连接已被断开或 C++ 对象已销毁
+            self._player_connections = []
             self.player.deleteLater()
             self.player = None
         if self.audio_output:

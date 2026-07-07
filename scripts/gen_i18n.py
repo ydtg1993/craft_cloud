@@ -1,11 +1,26 @@
 """Generate TS + QM files for new languages from zh_CN.ts template."""
 import xml.etree.ElementTree as ET
-import copy, subprocess
+import copy, subprocess, shutil
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 I18N_DIR = _PROJECT_ROOT / 'resources' / 'i18n'
-LRELEASE = str(_PROJECT_ROOT / 'venv' / 'lib' / 'site-packages' / 'PySide6' / 'lrelease.exe')
+
+# 优先从系统 PATH 查找 lrelease，找不到再回退到 PySide6 捆绑版本
+_LRELEASE = shutil.which('lrelease') or shutil.which('lrelease.exe')
+if not _LRELEASE:
+    # Fallback: PySide6 捆绑的 lrelease（路径随平台和安装方式不同）
+    _candidates = [
+        _PROJECT_ROOT / 'venv' / 'lib' / 'site-packages' / 'PySide6' / 'lrelease.exe',
+        _PROJECT_ROOT / 'venv' / 'bin' / 'lrelease',
+        _PROJECT_ROOT / 'venv' / 'Scripts' / 'lrelease.exe',
+    ]
+    _LRELEASE = next((str(c) for c in _candidates if c.exists()), None)
+
+if not _LRELEASE:
+    raise FileNotFoundError(
+        "lrelease not found. Install PySide6 or add Qt bin directory to PATH."
+    )
 
 BASE_TS = str(I18N_DIR / 'craft_cloud.zh_CN.ts')
 
@@ -402,7 +417,7 @@ def main():
         tree_copy.write(out_ts, encoding='utf-8', xml_declaration=True)
         print(f'TS created: {out_ts} ({count} translated)')
 
-        subprocess.run([LRELEASE, out_ts, '-qm', out_qm], check=True)
+        subprocess.run([_LRELEASE, out_ts, '-qm', out_qm], check=True)
         print(f'QM compiled: {out_qm}')
 
     print('\nAll 4 languages done!')

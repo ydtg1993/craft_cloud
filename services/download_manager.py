@@ -5,6 +5,7 @@
 from pathlib import Path
 from PySide6.QtCore import QObject
 from core.task_types import Task
+from core.utils import throttled_progress_callback
 from core.translator import tr
 
 
@@ -50,16 +51,12 @@ class DownloadManager(QObject):
             if not msg:
                 raise Exception(tr("No downloadable media in the message."))
 
-            last = -1
             def progress(current, total):
-                nonlocal last
                 if total:
-                    p = int(current * 100 / total)
-                    if p != last:
-                        signals.progress.emit(task_id, p)
-                        last = p
+                    signals.progress.emit(task_id, int(current * 100 / total))
 
-            await client.download_media(msg, file=save_path, progress_callback=progress)
+            await client.download_media(msg, file=save_path,
+                                        progress_callback=throttled_progress_callback(progress))
 
         task_id = f"dl_{id(file_info)}"
         filename = Path(save_path).name
@@ -78,31 +75,33 @@ class DownloadManager(QObject):
         files = self.db.files.get_all_files_recursive(dir_id)
         if not files or not root_save_dir:
             return
+        # 缓存每个 directory_id 的路径，避免 N+1 DB 查询
+        path_cache: dict[int, str] = {}
         for file_rec in files:
-            path_parts = self.db.dirs.get_path_to_directory(file_rec.directory_id)
-            local_rel_dir = self._build_relative_path(path_parts, dir_id)
+            d_id = file_rec.directory_id
+            if d_id not in path_cache:
+                path_parts = self.db.dirs.get_path_to_directory(d_id)
+                path_cache[d_id] = self._build_relative_path(path_parts, dir_id)
+            local_rel_dir = path_cache[d_id]
             local_dir = str(Path(root_save_dir) / local_rel_dir)
             Path(local_dir).mkdir(parents=True, exist_ok=True)
             local_path = str(Path(local_dir) / (file_rec.display_name or file_rec.original_name))
+            task_id = f"dl_{file_rec.id}_{file_rec.message_id}"
 
             async def download_coro(client, signals, mid=file_rec.message_id,
-                                    cid=file_rec.chat_id, lp=local_path):
+                                    cid=file_rec.chat_id, lp=local_path,
+                                    _tid=task_id):
                 msg = await _get_msg(client, cid, mid)
                 if not msg:
                     raise Exception(tr("No downloadable media in the message."))
 
-                last = -1
                 def progress(current, total):
-                    nonlocal last
                     if total:
-                        p = int(current * 100 / total)
-                        if p != last:
-                            signals.progress.emit(task_id, p)
-                            last = p
+                        signals.progress.emit(_tid, int(current * 100 / total))
 
-                await client.download_media(msg, file=lp, progress_callback=progress)
+                await client.download_media(msg, file=lp,
+                                            progress_callback=throttled_progress_callback(progress))
 
-            task_id = f"dl_{file_rec.id}_{file_rec.message_id}"
             filename = file_rec.display_name or file_rec.original_name
             task = Task(
                 task_id=task_id,

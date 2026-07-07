@@ -132,12 +132,19 @@ class ConfigManager:
         """Force any pending deferred save to disk. Call before app exit."""
         if self._save_timer.isActive():
             self._save_timer.stop()
-            self._do_save()
+        # 清理 QTimer，防止其 timeout 信号在 ConfigManager 析构后触发
+        self._save_timer.deleteLater()
+        self._do_save()
 
     @staticmethod
     def _is_main_thread() -> bool:
-        import threading
-        return threading.current_thread() is threading.main_thread()
+        from PySide6.QtCore import QThread
+        from PySide6.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app is None:
+            import threading
+            return threading.current_thread() is threading.main_thread()
+        return QThread.currentThread() is app.thread()
 
     def _do_save(self) -> None:
         """Internal: validate and persist config to YAML."""
@@ -156,8 +163,6 @@ class ConfigManager:
 
     def _migrate_old_config(self) -> None:
         """Migrate legacy config keys, then remove them to avoid repeat migration."""
-
-    def _ensure_keys_exist(self) -> None:
         defaults = self._default_dict()
         for key in ("upload_limit_settings", "auto_sync_settings"):
             if key not in self.config:

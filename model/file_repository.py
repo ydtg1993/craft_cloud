@@ -11,7 +11,7 @@ Write serialization:
 """
 from collections import namedtuple
 from pathlib import Path
-from sqlalchemy import select, update, delete, func, text
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.exc import SQLAlchemyError
 from model.orm_models import File, DailyUploadLog, Directory
 from model.orm_models import FileRecord, DirectoryItem  # re-export for callers
@@ -516,20 +516,18 @@ class FileRepository:
         """Update Whoosh index (must be called AFTER DB commit to avoid WAL conflicts)."""
         session = self._session()
         try:
-            # Get data for Whoosh indexing
             _dir_id_row = session.execute(
-                text("SELECT directory_id FROM files WHERE id = :fid"),
-                {"fid": file_id}
+                select(File.directory_id).where(File.id == file_id)
             ).scalar_one_or_none()
             dir_id = _dir_id_row or 0
             _dir_name_row = session.execute(
-                text("SELECT d.name FROM directories d JOIN files f ON f.directory_id = d.id WHERE f.id = :fid"),
-                {"fid": file_id}
+                select(Directory.name)
+                .join(File, File.directory_id == Directory.id)
+                .where(File.id == file_id)
             ).scalar_one_or_none()
             dir_name = _dir_name_row or ""
             _orig_row = session.execute(
-                text("SELECT original_name FROM files WHERE id = :fid"),
-                {"fid": file_id}
+                select(File.original_name).where(File.id == file_id)
             ).scalar_one_or_none()
             original_name = _orig_row or ""
             self._indexer.index_file(file_id, name, original_name, dir_name, dir_id)

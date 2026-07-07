@@ -2,13 +2,12 @@
 
 通过 Qt Signal 与 UI 通信，不直接使用 QFileDialog/QMessageBox。
 """
-import time
 from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 from core.task_types import Task
 from core.telegram_uploader import TelethonUploader
 from core.media_utils import generate_media_cache
-from core.utils import get_cache_dir
+from core.utils import get_cache_dir, throttled_progress_callback
 from core.translator import tr
 from loguru import logger
 
@@ -46,6 +45,7 @@ class UploadManager(QObject):
             try:
                 size = Path(fp).stat().st_size
             except OSError:
+                logger.warning(f"[Upload] 跳过无法访问的文件: {Path(fp).name}")
                 continue
             if single_limit_bytes and size > single_limit_bytes:
                 skipped_files.append(fp)
@@ -90,7 +90,11 @@ class UploadManager(QObject):
         if daily_enabled:
             uploaded_size = self.db.files.get_today_upload_size()
             uploaded_count = self.db.files.get_today_upload_count()
-            new_size = sum(Path(f).stat().st_size for f in eligible_paths)
+            try:
+                new_size = sum(Path(f).stat().st_size for f in eligible_paths)
+            except OSError:
+                logger.warning("[Upload] 无法统计文件大小，跳过每日配额检查")
+                new_size = 0
             new_count = len(eligible_paths)
 
             if uploaded_size + new_size > daily_size_bytes:
@@ -120,24 +124,14 @@ class UploadManager(QObject):
                 chat_id = "me" if dir_id == 0 else self.db.dirs.get_directory_channel(dir_id)
                 dir_name = self._get_dir_name(dir_id)
 
-                last_pct = -1
-                last_emit_time = 0.0   # 时间节流：至少间隔 200ms
                 def upload_progress(current, total):
-                    nonlocal last_pct, last_emit_time
                     if total:
-                        pct = int(current * 100 / total)
-                        now = time.monotonic()
-                        # 节流：百分比未变 且 距上次发射不足 200ms 则跳过
-                        if pct == last_pct and (now - last_emit_time) < 0.2:
-                            return
-                        if pct != last_pct or (now - last_emit_time) >= 0.2:
-                            signals.progress.emit(_task_id, pct)
-                            last_pct = pct
-                            last_emit_time = now
+                        signals.progress.emit(_task_id, int(current * 100 / total))
 
                 file_id, msg_id, real_chat_id = await uploader.upload(
                     chat_id, fp, db=self.db, dir_id=dir_id, dir_name=dir_name,
-                    client=client, progress_callback=upload_progress,
+                    client=client,
+                    progress_callback=throttled_progress_callback(upload_progress),
                 )
                 # 上传已成功 — 以下全部为本地记录操作，失败不影响 TG 端结果
                 cache_dir = get_cache_dir()

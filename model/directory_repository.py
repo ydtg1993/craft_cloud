@@ -9,7 +9,7 @@ Write serialization:
     operations (5s timeout → DatabaseBusyError).
 """
 from pathlib import Path
-from collections import defaultdict
+from collections import defaultdict, deque
 from sqlalchemy import select, update, delete, func, case
 from sqlalchemy.exc import SQLAlchemyError
 from model.orm_models import Directory, File, AutoSyncStatus
@@ -325,16 +325,29 @@ class DirectoryRepository:
             session.rollback()
         return summaries
 
-    @staticmethod
-    def _collect_descendant_ids(root_id, session):
-        """BFS 收集 root_id 及其所有子孙目录的 ID 列表。"""
+    def _collect_descendant_ids(self, root_id, session=None):
+        """BFS 收集 root_id 及其所有子孙目录的 ID 列表。
+
+        使用迭代 BFS 而非递归，避免深层目录树导致 RecursionError。
+        与 delete_directory_recursive 共用此方法。
+
+        Args:
+            root_id: 根目录 ID
+            session: 可选，传入已有的 session 以复用；不传则自动获取
+        """
+        if session is None:
+            session = self._session()
         ids = [root_id]
-        queue = [root_id]
+        queue = deque([root_id])
         seen = {root_id}
         while queue:
             if len(ids) > 10000:
+                logger.warning(
+                    f"[DB] _collect_descendant_ids 达到上限 10000，"
+                    f"截断 root_id={root_id} 的部分子孙目录"
+                )
                 break
-            parent = queue.pop(0)
+            parent = queue.popleft()
             children = session.execute(
                 select(Directory.id).where(Directory.parent_id == parent)
             ).scalars().all()
@@ -356,34 +369,29 @@ class DirectoryRepository:
             dir_id: 要删除的根目录 ID
             _bg: True 表示后台线程调用（无限等锁），False 表示 UI 线程（5s 超时）
         """
-        # Phase 1: read-only collection (no write lock needed)
+        # Phase 1: read-only collection via iterative BFS (no write lock needed)
         session = self._session()
         try:
-            dirs_to_delete = []
-
-            def collect_dirs(did):
-                dirs_to_delete.append(did)
-                children = session.execute(
-                    select(Directory.id).where(Directory.parent_id == did)
-                ).scalars().all()
-                for c in children:
-                    collect_dirs(c)
-
-            collect_dirs(dir_id)
+            dirs_to_delete = self._collect_descendant_ids(dir_id, session)
             logger.info(f"[DB] 递归删除目录: root={dir_id}, 共 {len(dirs_to_delete)} 个子目录")
-
-            # 收集缓存文件路径（在删除前查询）
-            cache_files = session.execute(
-                select(File.thumbnail_path, File.cached_video_path)
-                .where(File.directory_id.in_(dirs_to_delete))
-            ).all()
         finally:
             session.rollback()  # release read lock (no writes in this phase)
 
         # Phase 2: destructive writes under write lock, batched commits
         with db_write_guard(timeout=None if _bg else 5.0):
             try:
-                # 2a. Delete files in smaller batches to keep transactions short
+                # 2a. 在写锁内重新查询缓存文件路径，防止 Phase 1→2 之间
+                #     其他线程新增文件导致的 TOCTOU 竞态（遗漏缓存清理）。
+                s = self._session()
+                try:
+                    cache_files = s.execute(
+                        select(File.thumbnail_path, File.cached_video_path)
+                        .where(File.directory_id.in_(dirs_to_delete))
+                    ).all()
+                finally:
+                    pass  # scoped session — no explicit cleanup needed
+
+                # 2b. Delete files in smaller batches to keep transactions short
                 BATCH_SIZE = 500
                 for i in range(0, len(dirs_to_delete), BATCH_SIZE):
                     batch = dirs_to_delete[i:i + BATCH_SIZE]
@@ -394,15 +402,12 @@ class DirectoryRepository:
                     except SQLAlchemyError:
                         s.rollback()
                         raise
-                    finally:
-                        # Clean up thread-local session to avoid stale state
-                        pass
 
-                # 2b. Clean up media cache files on disk (outside DB transaction)
+                # 2c. Clean up media cache files on disk (outside DB transaction)
                 for thumb_path, clip_path in cache_files:
                     remove_media_cache_files(thumb_path, clip_path)
 
-                # 2c. Delete directories in reverse order (children first)
+                # 2d. Delete directories in reverse order (children first)
                 for did in reversed(dirs_to_delete):
                     s = self._session()
                     try:

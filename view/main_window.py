@@ -204,7 +204,7 @@ class MainWindow(FluentWindow):
         self.task_manager.task_progress.connect(self.task_queue_page.update_task_progress)
         self.task_manager.task_finished.connect(self._on_task_finished_for_queue)
 
-    def _on_task_added(self, task_id, description, task_type, file_size="-"):
+    def _on_task_added(self, task_id, description, task_type, file_size="-", raw_size=0):
         self.task_queue_page.add_task(task_id, description, task_type, file_size)
         self._update_badge_count()
 
@@ -392,6 +392,37 @@ class MainWindow(FluentWindow):
         if w.exec():
             self.file_manager.delete_directory(dir_id)
 
+    def _on_delete_sync_root(self, dir_id, name):
+        """Delete a sync root directory's Telegram resources, keeping local files.
+
+        Unlike _handle_dir_delete, this only removes the TG channel and DB
+        records — the local folder and its contents are left untouched.
+        """
+        if not isinstance(dir_id, int) or dir_id <= 0:
+            logger.warning(
+                f"[UI] _on_delete_sync_root 收到无效 dir_id={dir_id!r} "
+                f"(type={type(dir_id).__name__}), 已忽略"
+            )
+            return
+        info = self.file_manager.get_dir_info(dir_id)
+        if not info:
+            return
+        if info.channel_id == "me" and info.parent_id == 0:
+            return  # Saved Messages 是系统目录，不允许删除
+
+        title = tr("Delete Telegram Resources")
+        msg = tr(
+            'Delete Telegram channel for "{name}"?\n\n'
+            "This will permanently remove the channel and all synced files "
+            "from Telegram. Your local files will NOT be affected.\n"
+            "This action cannot be undone."
+        ).format(name=name)
+        w = MessageBox(title, msg, self)
+        if w.exec():
+            self.file_manager.delete_sync_directory_tg_only(dir_id)
+            self._refresh_current_directory()
+            self._refresh_sync_page()
+
     # ---- Dialog 弹窗逻辑 ----
     def _show_date_flyout(self):
         dialog = DateSearchDialog(self)
@@ -497,7 +528,12 @@ class MainWindow(FluentWindow):
 
     @staticmethod
     def _parse_display_size(s: str) -> int:
-        """Parse a human-readable size string like '1.2 MB' back to bytes."""
+        """Parse a human-readable size string like '1.2 MB' back to bytes.
+
+        .. deprecated::
+            Use the raw_file_size field from the task_added signal instead.
+            Kept for compatibility with persisted task history data.
+        """
         if not s or s == "-":
             return 0
         units = {"B": 1, "KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3, "TB": 1024 ** 4}
@@ -512,10 +548,10 @@ class MainWindow(FluentWindow):
         except ValueError:
             return 0
 
-    def _on_task_added_for_stats(self, task_id, description, task_type, file_size):
+    def _on_task_added_for_stats(self, task_id, description, task_type, file_size, raw_size=0):
         """缓存下载任务的文件大小，完成时用于累计下载量。"""
         if task_type == "download":
-            self._dl_task_sizes[task_id] = self._parse_display_size(file_size)
+            self._dl_task_sizes[task_id] = raw_size
 
     def _on_task_finished_for_stats(self, task_id, status):
         """下载完成时累计下载量并刷新状态栏。"""
@@ -572,18 +608,18 @@ class MainWindow(FluentWindow):
         elif bar_type == "error":
             InfoBar.error(title, message, position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
 
-    def _on_session_expired(self, reason: str):
-        """Session 失效回调 — 由 TgWorker 在检测到 UnauthorizedError 时触发。
+    def _perform_logout(self, clear_user_id: bool = False):
+        """Common logout logic — stops TG operations, clears state, removes session.
 
-        清理本地状态，提示用户，并跳转到登录界面。
+        Args:
+            clear_user_id: If True, also reset user_id to 0
+                           (used for session expiry, not manual logout).
         """
-        logger.warning(f"[MainWindow] Session 失效: {reason}")
-        # 先停掉所有 TG 操作
         self.sync_ctrl.stop_sync()
         self.task_manager.stop()
-        # 清除登录状态
         self.config["telethon"]["logged_in"] = False
-        self.config["telethon"]["user_id"] = 0
+        if clear_user_id:
+            self.config["telethon"]["user_id"] = 0
         session_file = get_sessions_dir() / "my_account.session"
         if session_file.exists():
             try:
@@ -591,7 +627,14 @@ class MainWindow(FluentWindow):
             except Exception as e:
                 logger.warning(f"删除 session 文件失败: {e}")
         self.config_manager.save_now()
-        # 提示用户
+
+    def _on_session_expired(self, reason: str):
+        """Session 失效回调 — 由 TgWorker 在检测到 UnauthorizedError 时触发。
+
+        清理本地状态，提示用户，并跳转到登录界面。
+        """
+        logger.warning(f"[MainWindow] Session 失效: {reason}")
+        self._perform_logout(clear_user_id=True)
         InfoBar.warning(
             self.tr("Session Expired"),
             self.tr("Your session was revoked from another device. Please log in again."),
@@ -602,16 +645,7 @@ class MainWindow(FluentWindow):
         self.logout_requested.emit()
 
     def _do_logout(self):
-        self.sync_ctrl.stop_sync()
-        self.task_manager.stop()
-        self.config["telethon"]["logged_in"] = False
-        session_file = get_sessions_dir() / "my_account.session"
-        if session_file.exists():
-            try:
-                session_file.unlink(missing_ok=True)
-            except Exception as e:
-                logger.warning(f"删除 session 文件失败: {e}")
-        self.config_manager.save_now()
+        self._perform_logout()
         self.logout_requested.emit()
 
     def cleanup_and_close(self):

@@ -93,9 +93,7 @@ class NormalDirectoryStrategy(SyncOperationStrategy):
             if chat_id and message_id:
                 self.file_manager._batch_edit_tg_captions([(chat_id, message_id, new_name)])
             self.file_manager.db.files.update_display_name(item_id, new_name)
-            original_name = file_info.original_name
-            if original_name != new_name:
-                self.file_manager.db.files.update_file_original_name(item_id, original_name)
+            # original_name is the TG-side filename and should not change on rename
 
     def move(self, item_id, target_dir_id, is_dir=False):
         if is_dir:

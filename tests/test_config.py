@@ -7,10 +7,10 @@ class TestAppConfig:
     def test_default_config(self):
         config = AppConfig()
         assert config.language == "en"
-        assert config.theme == "dark"
-        assert config.view_mode == "list"
+        assert config.theme == "light"
+        assert config.view_mode == "icon"
         assert config.upload_retry_times == 3
-        assert config.max_concurrent_uploads == 1
+        assert config.max_concurrent_uploads == 3
 
     def test_telethon_defaults(self):
         config = AppConfig()
@@ -21,8 +21,8 @@ class TestAppConfig:
         config = AppConfig()
         limits = config.upload_limit_settings
         assert limits.enabled is True
-        assert limits.max_daily_size_gb == 10.0
-        assert limits.max_daily_files == 100
+        assert limits.max_daily_size_gb == 200.0
+        assert limits.max_daily_files == 800
 
 
 class TestConfigManager:
@@ -32,7 +32,7 @@ class TestConfigManager:
         config_path = tmp_path / "nonexistent.yaml"
         cm = ConfigManager(str(config_path))
         assert cm.config["language"] == "en"
-        assert cm.config["view_mode"] == "list"
+        assert cm.config["view_mode"] == "icon"
 
     def test_load_from_yaml(self, tmp_path):
         """ConfigManager loads from a YAML file."""

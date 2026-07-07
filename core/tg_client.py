@@ -37,6 +37,9 @@ def ensure_session_wal():
             conn.close()
             if current_timeout >= 30000:
                 return  # 已正确配置，跳过
+            # journal_mode 已是 WAL 但 busy_timeout 不足 → 故意
+            # fallthrough 到下方写锁块内更新 busy_timeout。
+            # 注意：此时 conn 已关闭，写锁块内会重新打开连接。
         else:
             conn.close()
 

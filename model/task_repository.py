@@ -1,6 +1,6 @@
 """Task history repository — 持久化已完成/失败的任务记录。"""
 
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, delete
 from model.orm_models import TaskHistory
 from core.database import db_write_guard
 
@@ -68,5 +68,5 @@ class TaskRepository:
         """清空所有任务历史记录。"""
         with db_write_guard(timeout=5.0):
             session = self._session()
-            session.query(TaskHistory).delete()
+            session.execute(delete(TaskHistory))
             session.commit()

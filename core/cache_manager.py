@@ -89,6 +89,6 @@ class CacheManager:
                 if substring in str(val):
                     self._cache.delete(key)
                     removed += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"[Cache] remove_by_value_substring 跳过 key={key}: {e}")
         return removed

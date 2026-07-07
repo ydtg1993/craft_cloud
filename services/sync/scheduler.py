@@ -297,48 +297,51 @@ class SyncScheduler(QObject):
     def _prep_and_run_sync(self, folder_path):
         """后台线程：等待 worker 空闲 → 断开共享客户端 → 执行同步 → 重连。
 
-        这个函数跑在独立线程中，可以安全地使用 time.sleep 和
-        future.result() 而不会阻塞 UI。
+        使用 while 循环重试（而非递归调用自身），避免每次重试都创建新线程。
+        所有阻塞操作（time.sleep、future.result）均安全地运行在后台线程中。
         """
         import time as _time
         client_disconnected = False
 
-        # ── Phase 1: 等待 worker 空闲（不打断用户的上传/下载） ──
         if self._task_manager is not None:
-            waited = 0
-            while not self._task_manager.is_worker_idle() and waited < _MAX_IDLE_POLLS:
-                if self._stop_event.is_set():
-                    self._sync_running = False
-                    return
-                _time.sleep(0.1)
-                waited += 1
+            # ── Phase 1+2: 等待空闲并断开（循环重试，不创建新线程） ──
+            while True:
+                # Phase 1: 等待 worker 空闲（不打断用户的上传/下载）
+                waited = 0
+                while (not self._task_manager.is_worker_idle()
+                       and waited < _MAX_IDLE_POLLS):
+                    if self._stop_event.is_set():
+                        self._sync_running = False
+                        return
+                    _time.sleep(0.1)
+                    waited += 1
 
-            if not self._task_manager.is_worker_idle():
-                # 仍有上传/下载在进行，延后重试
-                logger.info(
-                    f"[SyncScheduler] TgWorker 仍有活跃任务（已等 {waited * 0.1:.0f}s），"
-                    f"{_RETRY_DELAY_SEC}s 后重试"
-                )
-                _time.sleep(_RETRY_DELAY_SEC)
-                if not self._stop_event.is_set():
-                    self._prep_and_run_sync(folder_path)
-                else:
-                    self._sync_running = False
-                return
+                if not self._task_manager.is_worker_idle():
+                    logger.info(
+                        f"[SyncScheduler] TgWorker 仍有活跃任务"
+                        f"（已等 {waited * 0.1:.0f}s），"
+                        f"{_RETRY_DELAY_SEC}s 后重试"
+                    )
+                    if self._stop_event.wait(_RETRY_DELAY_SEC):
+                        self._sync_running = False
+                        return
+                    continue  # 重新进入 Phase 1 等待
 
-            # ── Phase 2: 断开共享客户端，为同步让出 session 文件 ──
-            client_disconnected = self._task_manager.disconnect_worker_for_sync(timeout=15.0)
-            if not client_disconnected:
-                logger.warning(
-                    "[SyncScheduler] 无法断开共享客户端，"
-                    f"{_RETRY_DELAY_SEC}s 后重试"
+                # Phase 2: 断开共享客户端，为同步让出 session 文件
+                client_disconnected = (
+                    self._task_manager.disconnect_worker_for_sync(timeout=15.0)
                 )
-                _time.sleep(_RETRY_DELAY_SEC)
-                if not self._stop_event.is_set():
-                    self._prep_and_run_sync(folder_path)
-                else:
-                    self._sync_running = False
-                return
+                if not client_disconnected:
+                    logger.warning(
+                        "[SyncScheduler] 无法断开共享客户端，"
+                        f"{_RETRY_DELAY_SEC}s 后重试"
+                    )
+                    if self._stop_event.wait(_RETRY_DELAY_SEC):
+                        self._sync_running = False
+                        return
+                    continue  # 重新进入 Phase 1 等待
+
+                break  # 空闲 + 已断开 → 准备同步
 
         # ── Phase 3: 创建并执行同步任务（在本后台线程内同步运行） ──
         self._client_was_disconnected = client_disconnected

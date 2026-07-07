@@ -278,8 +278,7 @@ class FileManager(QObject):
         if chat_id and message_id:
             self._batch_edit_tg_captions([(chat_id, message_id, new_name)])
         self.db.files.update_display_name(file_id, new_name)
-        if file_info.original_name != new_name:
-            self.db.files.update_file_original_name(file_id, file_info.original_name)
+        # original_name is the TG-side filename and should not change on rename
 
     def delete_sync_directory_tg_only(self, dir_id):
         dir_info = self.db.get_directory_info(dir_id)

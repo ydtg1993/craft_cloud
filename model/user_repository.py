@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from model.orm_models import User
 from core.database import db_write_guard
 from loguru import logger
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class UserRepository:
@@ -17,13 +17,14 @@ class UserRepository:
         return self.db._get_session()
 
     def upsert_user(self, *, tg_id: int, api_id: int, api_hash: str,
-                    phone: str = "", username: str = "", avatar: str = "") -> int:
+                    phone: str = "", username: str = "", avatar: str = "",
+                    _bg: bool = False) -> int:
         """插入或更新用户记录，返回用户数据库 ID。
 
         如果 tg_id 已存在，则更新 api_id/api_hash/username/phone/login_at；
         否则创建新记录。完成后将该用户设为当前激活用户。
         """
-        with db_write_guard(timeout=5.0):
+        with db_write_guard(timeout=None if _bg else 5.0):
             session = self._session()
             try:
                 # 先置零所有用户的 active，确保同一时间只有一个激活用户
@@ -43,7 +44,7 @@ class UserRepository:
                     if avatar:
                         existing.avatar = avatar
                     existing.active = 1
-                    existing.login_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                    existing.login_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     session.commit()
                     logger.info(f"[DB] 用户已更新: tg_id={tg_id}, username={username}")
                     return existing.id
@@ -66,9 +67,9 @@ class UserRepository:
                 logger.error(f"[DB] 用户 upsert 失败: {e}, tg_id={tg_id}")
                 raise
 
-    def set_active_user(self, tg_id: int) -> bool:
+    def set_active_user(self, tg_id: int, _bg: bool = False) -> bool:
         """将指定用户设为当前激活用户（其余 active=0）。"""
-        with db_write_guard(timeout=5.0):
+        with db_write_guard(timeout=None if _bg else 5.0):
             session = self._session()
             try:
                 session.execute(update(User).values(active=0))

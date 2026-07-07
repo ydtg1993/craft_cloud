@@ -167,6 +167,16 @@ class LoginWindow(QDialog):
     # ═══════════════════════════════════════════════════════════
 
     @staticmethod
+    def _emit_safe(signal, *args):
+        """Emit a Qt signal, catching RuntimeError if the C++ object
+        has been destroyed (e.g. dialog closed during background task).
+        """
+        try:
+            signal.emit(*args)
+        except RuntimeError:
+            pass  # C++ object already destroyed — silently drop
+
+    @staticmethod
     def _load_api_credentials(telethon_cfg: dict) -> tuple:
         """加载 API 凭证：优先从 users 表，fallback 到旧 config。"""
         # 1. 尝试从 users 表读取当前活跃用户
@@ -213,11 +223,13 @@ class LoginWindow(QDialog):
 
         self._abort_event.set()
         if self._client:
-            try:
-                asyncio.run(self._client.disconnect())
-            except Exception:
-                logger.debug("disconnect 时发生异常（忽略）")
+            # 在 daemon 线程中断开，避免 asyncio.run() 阻塞 UI 线程
+            old_client = self._client
             self._client = None
+            threading.Thread(
+                target=lambda c=old_client: asyncio.run(c.disconnect()),
+                daemon=True, name="qr-disconnect"
+            ).start()
         self._qr_login_obj = None
 
         session_path = Path(WORK_DIR, "my_account.session")
@@ -249,10 +261,12 @@ class LoginWindow(QDialog):
             try:
                 asyncio.run(self._connect_and_generate_qr(api_id_int, api_hash))
             except asyncio.TimeoutError:
-                if not self._abort_event.is_set(): self.login_error.emit("Timeout. Check your network.")
+                if not self._abort_event.is_set():
+                    self._emit_safe(self.login_error, "Timeout. Check your network.")
             except Exception as e:
                 logger.error(traceback.format_exc())
-                if not self._abort_event.is_set(): self.login_error.emit(str(e))
+                if not self._abort_event.is_set():
+                    self._emit_safe(self.login_error, str(e))
 
         threading.Thread(target=_bg_task, daemon=True).start()
 
@@ -361,7 +375,10 @@ class LoginWindow(QDialog):
                 target=lambda c=client: asyncio.run(c.disconnect()),
                 daemon=True, name="login-disconnect"
             ).start()
-        QApplication.instance().quit()
+        # 调用 reject() 让 exec() 返回 Rejected，由 main.py 的调用方决定是否退出。
+        # 不要在此处调用 QApplication.quit()，否则会绕过 QDialog 的返回值机制，
+        # 导致 main.py 中 login.exec() == Accepted 分支永远无法正常流转。
+        self.reject()
 
     def _on_login_success(self):
         api_id = int(self.api_id_edit.text().strip())

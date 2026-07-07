@@ -4,6 +4,7 @@
 """
 import sys
 import os
+import time
 import atexit
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -187,6 +188,46 @@ def _init_logging():
     )
 
 _init_logging()
+
+
+def throttled_progress_callback(callback, min_interval=0.2):
+    """工厂函数：返回一个时间节流的进度回调包装器。
+
+    节流策略：
+    - 百分比首次变化 → 立即调用
+    - 百分比未变化 → 至少间隔 min_interval 秒后才调用
+    - 百分比变化 + 距上次调用 >= min_interval → 立即调用
+
+    这避免了高频 chunk 回调阻塞事件循环，
+    同时保证 UI 进度条仍有流畅的更新频率。
+
+    Args:
+        callback: 原始 progress_callback(current, total)
+        min_interval: 最小调用间隔（秒），默认 200ms
+
+    Returns:
+        包装后的 progress_callback(current, total)
+    """
+    state = {"last_pct": -1, "last_time": 0.0}
+
+    def wrapper(current, total):
+        if not total:
+            return
+        pct = int(current * 100 / total)
+        now = time.monotonic()
+        elapsed = now - state["last_time"]
+
+        # 节流检查：百分比未变且间隔不足则跳过
+        if pct == state["last_pct"] and elapsed < min_interval:
+            return
+
+        # 满足任一条件则发射：百分比变化 OR 间隔足够
+        if pct != state["last_pct"] or elapsed >= min_interval:
+            callback(current, total)
+            state["last_pct"] = pct
+            state["last_time"] = now
+
+    return wrapper
 
 
 def format_file_size(size: int) -> str:

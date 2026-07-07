@@ -31,9 +31,7 @@ def compute_file_hash(file_path, algorithm='md5'):
 class DBManager:
     """Public interface to the database. Holds repository references."""
 
-    def __init__(self, db_path="data/craftfiles.db"):
-        # db_path is kept for compatibility; actual path resolved by database.py
-        self.db_path = db_path
+    def __init__(self):
         init_db()
         self.dirs = DirectoryRepository(self)
         self.files = FileRepository(self)

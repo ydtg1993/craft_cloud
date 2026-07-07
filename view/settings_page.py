@@ -144,6 +144,7 @@ class SyncFolderListSettingCard(ExpandSettingCard):
     """ 同步文件夹列表卡片（可展开），添加时弹出 SyncFolderConfigDialog """
 
     folderChanged = Signal()
+    channelCreationError = Signal(str, str)  # title, message → parent SettingsPage
 
     def __init__(self, config_manager: ConfigManager, db, task_manager=None,
                  title: str = None, content: str = None, parent=None):
@@ -238,7 +239,7 @@ class SyncFolderListSettingCard(ExpandSettingCard):
 
         def on_error(err):
             logger.error(f"[SettingsPage] 频道创建失败: {folder_path} -> {err}")
-            self._show_info_bar.emit("error", err_title, f"{folder_display}: {err}")
+            self.channelCreationError.emit(err_title, f"{folder_display}: {err}")
 
         self.task_manager.run_on_client(_create, on_result, on_error)
 
@@ -677,6 +678,8 @@ class SettingsPage(QWidget):
             self,
         )
         self.folder_list_card.setExpand(True)
+        self.folder_list_card.channelCreationError.connect(
+            lambda title, msg: InfoBar.error(title, msg, parent=self.window()))
         layout.addWidget(self.folder_list_card)
 
         layout.addStretch()

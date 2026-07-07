@@ -1,12 +1,11 @@
 import asyncio
 import threading
-import time
 from pathlib import Path
 from telethon import TelegramClient
 from telethon.tl.functions.channels import CreateChannelRequest, EditPhotoRequest
 from telethon.tl.types import DocumentAttributeFilename
 from telethon.errors import RPCError
-from core.utils import get_sessions_dir, resource_path
+from core.utils import get_sessions_dir, resource_path, throttled_progress_callback  # noqa: F401 — re-export
 from core.translator import tr
 from loguru import logger
 WORK_DIR = str(get_sessions_dir())
@@ -46,44 +45,17 @@ def _clear_entity_cache():
             logger.debug(f"[EntityCache] 已清除全部 {count} 条缓存")
 
 
-def throttled_progress_callback(callback, min_interval=0.2):
-    """工厂函数：返回一个时间节流的进度回调包装器。
+def _clear_channel_locks():
+    """清除全部频道创建锁（session 变更或测试清理时调用）。
 
-    节流策略：
-    - 百分比首次变化 → 立即调用
-    - 百分比未变化 → 至少间隔 min_interval 秒后才调用
-    - 百分比变化 + 距上次调用 >= min_interval → 立即调用
-
-    这避免了 send_file 的高频 chunk 回调阻塞事件循环，
-    同时保证 UI 进度条仍有流畅的更新频率。
-
-    Args:
-        callback: 原始 progress_callback(current, total)
-        min_interval: 最小调用间隔（秒），默认 200ms
-
-    Returns:
-        包装后的 progress_callback(current, total)
+    频道锁字典会随目录创建而增长。正常使用中每个顶层目录最多一把锁，
+    增长缓慢且可控，但测试环境需要清理以避免跨用例污染。
     """
-    state = {"last_pct": -1, "last_time": 0.0}
-
-    def wrapper(current, total):
-        if not total:
-            return
-        pct = int(current * 100 / total)
-        now = time.monotonic()
-        elapsed = now - state["last_time"]
-
-        # 节流检查：百分比未变且间隔不足则跳过
-        if pct == state["last_pct"] and elapsed < min_interval:
-            return
-
-        # 满足任一条件则发射：百分比变化 OR 间隔足够
-        if pct != state["last_pct"] or elapsed >= min_interval:
-            callback(current, total)
-            state["last_pct"] = pct
-            state["last_time"] = now
-
-    return wrapper
+    with _ensure_channel_locks_guard:
+        count = len(_ensure_channel_locks)
+        _ensure_channel_locks.clear()
+        if count:
+            logger.debug(f"[ChannelLocks] 已清除全部 {count} 把锁")
 
 
 class TelethonUploader:
@@ -190,14 +162,17 @@ class TelethonUploader:
                 megagroup=False,
                 broadcast=True,
             ))
-            chat_id = None
-            chat_title = top_dir_name
-            for chat in result.chats:
-                chat_id = chat.id
-                chat_title = chat.title
-                break
-            if chat_id is None:
-                raise Exception("无法创建频道：未获取到 chat_id")
+            if not result.chats:
+                raise Exception("无法创建频道：Telegram 未返回 chat 对象")
+            # CreateChannelRequest 返回的 chats 列表中第一个即为新建的频道
+            from telethon.tl.types import Channel
+            chat = result.chats[0]
+            if not isinstance(chat, Channel):
+                raise Exception(
+                    f"无法创建频道：返回的不是 Channel 类型 ({type(chat).__name__})"
+                )
+            chat_id = chat.id
+            chat_title = chat.title
             db.dirs.set_directory_channel(top_dir_id, chat_id, _bg=True)
             logger.info(f"[Upload] 已为新目录创建频道: {chat_id} ({chat_title})")
 

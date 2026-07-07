@@ -24,7 +24,7 @@ class TaskManager(QObject):
     In-progress tasks live only in memory.
     """
 
-    task_added = Signal(str, str, str, str)   # → UI: task_id, description, task_type, file_size
+    task_added = Signal(str, str, str, str, int)   # → UI: task_id, description, task_type, file_size_str, raw_file_size
     task_progress = Signal(str, int)           # → UI: task_id, percent
     task_finished = Signal(str, str)           # → UI: task_id, status
     db_signal = Signal(str, dict)              # → MainWindow: DB operations
@@ -85,10 +85,12 @@ class TaskManager(QObject):
 
         # 只记录上传/下载任务到内存缓存（删除/重命名等不展示在队列中）
         if task_type in ("upload", "download"):
+            raw_size = task.file_size if task.file_size else 0
             self._task_info[task.task_id] = {
                 "description": task.description,
                 "task_type": task_type,
-                "file_size": self._format_size(task.file_size) if task.file_size else "-",
+                "file_size": self._format_size(raw_size) if raw_size else "-",
+                "raw_file_size": raw_size,
             }
             self._pending_count += 1
             self.active_task_count_changed.emit(self._pending_count)
@@ -108,7 +110,8 @@ class TaskManager(QObject):
         if task_type in ("upload", "download"):
             info = self._task_info.get(task_id, {})
             file_size = info.get("file_size", "-")
-            self.task_added.emit(task_id, description, task_type, file_size)
+            raw_size = info.get("raw_file_size", 0)
+            self.task_added.emit(task_id, description, task_type, file_size, raw_size)
 
     def _on_worker_task_finished(self, task_id, status):
         """Task completed — persist to DB, decrement counter, forward to UI.
@@ -163,18 +166,13 @@ class TaskManager(QObject):
     @staticmethod
     def _format_size(size_bytes) -> str:
         """Format byte size to human-readable string."""
+        from core.utils import format_file_size
+        if size_bytes is None:
+            return "-"
         try:
-            size = int(size_bytes)
+            return format_file_size(int(size_bytes))
         except (ValueError, TypeError):
             return "-"
-        if size < 1024:
-            return f"{size} B"
-        elif size < 1024 * 1024:
-            return f"{size / 1024:.1f} KB"
-        elif size < 1024 * 1024 * 1024:
-            return f"{size / (1024 * 1024):.1f} MB"
-        else:
-            return f"{size / (1024 * 1024 * 1024):.2f} GB"
 
     def run_on_client(self, coro_factory, on_result, on_error):
         """Run an arbitrary coroutine on the shared Telethon client.

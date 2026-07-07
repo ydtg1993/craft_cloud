@@ -98,10 +98,13 @@ def get_engine():
 
         @event.listens_for(_engine, "connect")
         def _set_sqlite_pragma(dbapi_connection, connection_record):
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL;")
-            cursor.execute("PRAGMA busy_timeout=30000;")
-            cursor.close()
+            try:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL;")
+                cursor.execute("PRAGMA busy_timeout=30000;")
+                cursor.close()
+            except Exception as e:
+                logger.warning(f"[DB] SQLite PRAGMA 设置失败: {e}")
 
     return _engine
 
@@ -142,6 +145,6 @@ def init_db():
             conn.exec_driver_sql("PRAGMA busy_timeout=2000")
             conn.exec_driver_sql("PRAGMA wal_checkpoint(PASSIVE)")
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"[DB] WAL checkpoint 跳过（非致命）: {e}")
     logger.info(f"[DB] 数据库已初始化: {_get_db_path()}")
