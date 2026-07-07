@@ -7,7 +7,7 @@ from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel,
 from core.translator import tr
 from qfluentwidgets import theme as qfw_theme
 
-VERSION = "2.0.0"
+VERSION = "2.7.7"
 GITHUB_URL = "https://github.com/ydtg1993/craft_cloud"
 WEBSITE_URL = "https://craftcloud.cc.cd/"
 

@@ -1,12 +1,17 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+from qfluentwidgets import TableView
+from qfluentwidgets.components.widgets.table_view import TableItemDelegate
 from view.drag_service import DragDataService
 from view.highlight_delegate import draw_bottom_gradient_bar
 
-class FolderTableHighlightDelegate(QStyledItemDelegate):
+
+class FolderTableHighlightDelegate(TableItemDelegate):
+    """在 TableItemDelegate 基础上为文件夹行绘制拖拽高亮渐变条。"""
+
     def __init__(self, table_view, parent=None):
-        super().__init__(parent)
+        super().__init__(table_view)
         self.table_view = table_view
 
     def paint(self, painter, option, index):
@@ -18,7 +23,10 @@ class FolderTableHighlightDelegate(QStyledItemDelegate):
                 if item and item.is_dir == 1:
                     draw_bottom_gradient_bar(painter, option.rect, QColor(90, 122, 255))
 
-class FileTableView(QTableView):
+
+class FileTableView(TableView):
+    """文件列表表格 — 继承 qfluentwidgets TableView，获得主题自适应、hover/选中态、交替行色等。"""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.verticalHeader().setVisible(False)
@@ -28,12 +36,12 @@ class FileTableView(QTableView):
         self.setDragDropMode(QAbstractItemView.DragDrop)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.move_file_callback = None
-        self.highlighted_row = -1          # 当前高亮的行号，-1 表示无高亮
+        self.highlighted_row = -1
         self._drag_start_pos = None
+        # 替换为自定义 delegate（保留 TableItemDelegate 全部主题逻辑 + 拖拽渐变）
         self.setItemDelegate(FolderTableHighlightDelegate(self))
-        # 让 viewport 自填充背景，防止打包后 QFluentWidgets 主题下
-        # 框选矩形（rubber band）移动时旧位置不能正确擦除导致残影
-        self.viewport().setAutoFillBackground(True)
+        # 在 CardWidget 内部，不显示自身边框
+        self.setBorderVisible(False)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -125,12 +133,9 @@ class FileTableView(QTableView):
             super().dropEvent(event)
 
     def _update_highlight(self, pos):
-        """根据鼠标位置更新高亮行"""
-        # 清除旧高亮
         if self.highlighted_row >= 0:
             old_row = self.highlighted_row
             self.highlighted_row = -1
-            # 刷新旧行的显示
             self.viewport().update(self.visualRect(self.model().index(old_row, 0)))
 
         index = self.indexAt(pos)
@@ -143,7 +148,6 @@ class FileTableView(QTableView):
                     self.viewport().update(self.visualRect(index))
 
     def _clear_highlight(self):
-        """清除高亮"""
         if self.highlighted_row >= 0:
             old_row = self.highlighted_row
             self.highlighted_row = -1

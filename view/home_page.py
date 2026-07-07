@@ -151,58 +151,46 @@ class HomePage(QWidget):
         qconfig.themeChanged.connect(self._on_theme_changed)
 
     def _refresh_view_theme(self):
-        """更新 file_view 内部控件的主题样式（背景/文字色/选中色）。"""
+        """更新 icon view 和容器控件的主题样式。table view 由 qfluentwidgets TableView 自行管理。"""
         is_dark = qfw_theme() == Theme.DARK
         text_color = "#FFFFFF" if is_dark else "#000000"
-        highlight_bg = "rgba(255, 255, 255, 0.18)" if is_dark else "rgba(0, 0, 0, 0.10)"
-        alt_bg = "rgba(255, 255, 255, 0.04)" if is_dark else "rgba(0, 0, 0, 0.02)"
+        highlight_bg = "rgba(255, 255, 255, 0.15)" if is_dark else "rgba(0, 0, 0, 0.08)"
 
-        # QSS：透明背景 + 主题文字色
         qss = f"""
-            QStackedWidget, QTableView, QListWidget {{
+            QStackedWidget {{
+                border: none;
+                outline: none;
+                background-color: transparent;
+            }}
+            QListWidget {{
                 border: none;
                 outline: none;
                 background-color: transparent;
                 color: {text_color};
             }}
-            QTableView::item, QListWidget::item {{
+            QListWidget::item {{
                 background-color: transparent;
                 color: {text_color};
             }}
-            QTableView::item:selected, QListWidget::item:selected {{
+            QListWidget::item:selected {{
                 background-color: {highlight_bg};
                 color: {text_color};
             }}
-            QHeaderView::section {{
-                background-color: transparent;
-                color: {text_color};
-                border: none;
-                padding: 4px 8px;
-            }}
         """
         self.file_view.setStyleSheet(qss)
-        self.file_view.table_view.viewport().setStyleSheet(
-            f"background: transparent; color: {text_color};")
-        self.file_view.icon_view.viewport().setStyleSheet(
-            f"background: transparent; color: {text_color};")
 
-        # Palette：兜底（QSS 覆盖不到的角落）
-        highlight_color = QColor(255, 255, 255, 45) if is_dark else QColor(0, 0, 0, 50)
+        # ── icon_view palette 兜底 ──
+        highlight_color = QColor(255, 255, 255, 38) if is_dark else QColor(0, 0, 0, 20)
         text_qcolor = QColor(255, 255, 255) if is_dark else QColor(0, 0, 0)
 
-        p = self.file_view.table_view.palette()
-        p.setColor(QPalette.Base, Qt.transparent)
-        p.setColor(QPalette.Text, text_qcolor)
-        p.setColor(QPalette.Highlight, highlight_color)
-        p.setColor(QPalette.HighlightedText, text_qcolor)
-        self.file_view.table_view.setPalette(p)
-
-        p2 = self.file_view.icon_view.palette()
+        iv = self.file_view.icon_view
+        p2 = iv.palette()
         p2.setColor(QPalette.Base, Qt.transparent)
         p2.setColor(QPalette.Text, text_qcolor)
         p2.setColor(QPalette.Highlight, highlight_color)
         p2.setColor(QPalette.HighlightedText, text_qcolor)
-        self.file_view.icon_view.setPalette(p2)
+        iv.setPalette(p2)
+        iv.viewport().setStyleSheet(f"background: transparent; color: {text_color};")
 
     def _on_theme_changed(self):
         """主题切换时更新所有卡片和内部视图的主题颜色。"""
