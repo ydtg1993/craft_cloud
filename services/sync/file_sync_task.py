@@ -84,10 +84,13 @@ class FileSyncTask(BaseSyncTask):
                 self.folder_path, synced_files=done, status=SYNC_PENDING, _bg=True
             )
 
+        upload_interval = config.get("auto_sync_settings", {}).get("upload_interval", 1)
+
         count = self._sync_files(
             local_files, telethon_cfg, target_dir_id, dir_map, all_dir_ids,
             total_files=total_files,
             progress_callback=progress_callback,
+            upload_interval=upload_interval,
         )
 
         if self.stop_event.is_set():
@@ -174,7 +177,7 @@ class FileSyncTask(BaseSyncTask):
     # ── 文件同步（分组上传版本） ──────────────────────────────
 
     def _sync_files(self, local_files, telethon_cfg, target_dir_id, dir_map, all_dir_ids,
-                    total_files=None, progress_callback=None):
+                    total_files=None, progress_callback=None, upload_interval=1):
         """分组上传文件，处理去重和已删除清理。"""
         GROUP_SIZE_LIMIT = 1 * 1024 ** 3
 
@@ -301,6 +304,11 @@ class FileSyncTask(BaseSyncTask):
                         progress_callback(synced, total_files)
                 except Exception as e:
                     logger.error(f"[{self._log_tag}] 上传失败 {file_path}: {e}")
+
+                # 上传间隔：避免触发 Telegram flood control
+                if upload_interval > 0 and not self.stop_event.is_set():
+                    import time as _time
+                    _time.sleep(upload_interval)
 
         # 二次清理：再次检查本地已不存在的文件
         for path, rec in list(db_by_path.items()):

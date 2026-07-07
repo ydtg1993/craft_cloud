@@ -625,6 +625,29 @@ class SettingsPage(QWidget):
             self.tr("Automatically synchronize watched folders to Telegram"),
             sync_en_widget,
         )
+
+        # 上传间隔时间
+        interval_widget = QWidget()
+        interval_layout = QHBoxLayout(interval_widget)
+        interval_layout.setContentsMargins(0, 0, 0, 0)
+        self.upload_interval_slider = Slider(Qt.Horizontal)
+        self.upload_interval_slider.setRange(1, 60)
+        self.upload_interval_slider.setMinimumWidth(200)
+        interval_val = self.config.get("auto_sync_settings", {}).get("upload_interval", 1)
+        self.upload_interval_slider.setValue(interval_val)
+        self.upload_interval_label = BodyLabel(self.tr(f"{interval_val} sec"))
+        self.upload_interval_slider.valueChanged.connect(
+            lambda v: self.upload_interval_label.setText(self.tr(f"{v} sec"))
+        )
+        interval_layout.addWidget(self.upload_interval_slider)
+        interval_layout.addWidget(self.upload_interval_label)
+        interval_layout.addStretch()
+        card.addGroup(
+            FluentIcon.SPEED_HIGH,
+            self.tr("Upload Interval Time"),
+            self.tr("Delay between file uploads during auto-sync (1-60 seconds)"),
+            interval_widget,
+        )
         layout.addWidget(card)
 
         # Watched Folders（SyncFolderListSettingCard 可展开卡片，默认展开）
@@ -700,6 +723,7 @@ class SettingsPage(QWidget):
         if "auto_sync_settings" not in self.config:
             self.config["auto_sync_settings"] = {}
         self.config["auto_sync_settings"]["enabled"] = self.sync_enabled.isChecked()
+        self.config["auto_sync_settings"]["upload_interval"] = self.upload_interval_slider.value()
         lang = self.language_combo.itemData(self.language_combo.currentIndex())
         self.config["language"] = lang if lang else "zh"
         self.config_manager.save()

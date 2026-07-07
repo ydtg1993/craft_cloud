@@ -97,30 +97,70 @@ async def export_qr_login(client: TelegramClient):
     return qr_login
 
 
+def _build_user_info(user) -> dict:
+    """Extract user info dict from a Telethon User object."""
+    username = getattr(user, 'username', '') or ''
+    first = getattr(user, 'first_name', '') or ''
+    last = getattr(user, 'last_name', '') or ''
+    display_name = (first + ' ' + last).strip() or username or str(user.id)
+    return {
+        'tg_id': user.id,
+        'username': display_name,
+        'phone': getattr(user, 'phone', '') or '',
+    }
+
+
 async def wait_qr_login(qr_login, timeout: int = 120) -> dict:
     """Wait for user to scan QR code and confirm login.
+
+    Note: May raise ``SessionPasswordNeededError`` (from telethon.errors)
+    if the account has two-step verification enabled.  Callers should catch
+    it and invoke :func:`complete_2fa_login` with the password.
 
     Args:
         qr_login: The QrLogin object from export_qr_login().
         timeout: Maximum wait time in seconds.
 
     Returns:
-        dict with keys: tg_id, username, phone, first_name, last_name.
+        dict with keys: tg_id, username, phone.
     """
     logger.info("等待扫码登录...")
     try:
         user = await asyncio.wait_for(qr_login.wait(), timeout=timeout)
-        username = getattr(user, 'username', '') or ''
-        first = getattr(user, 'first_name', '') or ''
-        last = getattr(user, 'last_name', '') or ''
-        display_name = (first + ' ' + last).strip() or username or str(user.id)
-        user_info = {
-            'tg_id': user.id,
-            'username': display_name,
-            'phone': getattr(user, 'phone', '') or '',
-        }
-        logger.info(f"扫码登录成功 ✅ — 用户: {display_name} (tg_id={user.id})")
-        return user_info
     except asyncio.TimeoutError:
         logger.warning("扫码登录超时")
         raise Exception("扫码超时，请重试")
+
+    user_info = _build_user_info(user)
+    logger.info(f"扫码登录成功 ✅ — 用户: {user_info['username']} (tg_id={user_info['tg_id']})")
+    return user_info
+
+
+async def complete_2fa_login(client: TelegramClient, password: str) -> dict:
+    """Complete two-step verification after QR code has been scanned.
+
+    Call this when :func:`wait_qr_login` raises ``SessionPasswordNeededError``.
+
+    Args:
+        client: The connected Telethon client (same instance used for QR login).
+        password: The user's two-step verification password.
+
+    Returns:
+        dict with keys: tg_id, username, phone.
+
+    Raises:
+        Exception: If the password is wrong or the 2FA flow fails.
+    """
+    from telethon.errors import PasswordHashInvalidError, SessionPasswordNeededError
+
+    logger.info("正在进行两步验证...")
+    try:
+        user = await client.sign_in(password=password)
+    except PasswordHashInvalidError:
+        raise Exception("两步验证密码错误")
+    except SessionPasswordNeededError:
+        raise Exception("两步验证密码错误")
+
+    user_info = _build_user_info(user)
+    logger.info(f"两步验证通过 ✅ — 用户: {user_info['username']} (tg_id={user_info['tg_id']})")
+    return user_info

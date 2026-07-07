@@ -23,7 +23,8 @@ from qfluentwidgets import (
 )
 
 from core.config_manager import ConfigManager
-from core.telethon_login import connect_client, export_qr_login, wait_qr_login
+from core.telethon_login import connect_client, export_qr_login, wait_qr_login, complete_2fa_login
+from telethon.errors import SessionPasswordNeededError
 from core.utils import resource_path, get_sessions_dir
 from loguru import logger
 
@@ -36,6 +37,7 @@ class LoginWindow(QDialog):
 
     login_success = Signal()
     login_error = Signal(str)
+    two_factor_needed = Signal()  # 需要两步验证密码
     _qr_image_ready = Signal(bytes)
     _qr_url_ready = Signal(str)
 
@@ -150,9 +152,12 @@ class LoginWindow(QDialog):
         self._client = None
         self._qr_login_obj = None
         self._abort_event = threading.Event()
+        self._2fa_event = threading.Event()   # 两步验证：等待用户输入密码
+        self._2fa_password = None             # 两步验证：用户输入的密码
 
         self.login_success.connect(self._on_login_success)
         self.login_error.connect(self._on_login_error)
+        self.two_factor_needed.connect(self._on_two_factor_needed)
         self._qr_image_ready.connect(self._on_qr_image_ready)
         self._qr_url_ready.connect(self._on_qr_url_ready)
 
@@ -257,7 +262,31 @@ class LoginWindow(QDialog):
 
         self._qr_login_obj = await export_qr_login(self._client)
         await self._show_qr_code(self._qr_login_obj.url)
-        self._login_user_info = await wait_qr_login(self._qr_login_obj, timeout=120)
+
+        try:
+            self._login_user_info = await wait_qr_login(self._qr_login_obj, timeout=120)
+        except SessionPasswordNeededError:
+            # 账号开启了二步验证，需要在主线程弹出密码输入框
+            if self._abort_event.is_set():
+                return
+
+            self._2fa_password = None
+            self._2fa_event.clear()
+            self.two_factor_needed.emit()
+
+            # 阻塞等待主线程返回密码（避免阻塞 event loop）
+            await asyncio.get_running_loop().run_in_executor(
+                None, self._2fa_event.wait
+            )
+
+            if self._abort_event.is_set():
+                return
+
+            password = self._2fa_password
+            if not password:
+                raise Exception("需要两步验证密码，已取消")
+
+            self._login_user_info = await complete_2fa_login(self._client, password)
 
         if self._abort_event.is_set(): return
         await self._client.disconnect()
@@ -299,6 +328,23 @@ class LoginWindow(QDialog):
         self.qr_status.setText(qr_url)
         self.generate_btn.setText(self.tr("Refresh QR Code"))
         self.generate_btn.setEnabled(True)
+
+    def _on_two_factor_needed(self):
+        """主线程槽：弹出两步验证密码输入框。"""
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+
+        # 更新状态提示
+        self.qr_status.setText(self.tr("Two-step verification required"))
+        self._set_status_color("#E6A817")  # 黄色警告
+
+        password, ok = QInputDialog.getText(
+            self,
+            self.tr("Two-Step Verification"),
+            self.tr("This account has two-step verification enabled.\nPlease enter your password:"),
+            QLineEdit.Password,
+        )
+        self._2fa_password = password if ok else None
+        self._2fa_event.set()
 
     def closeEvent(self, event):
         self._abort_event.set()
