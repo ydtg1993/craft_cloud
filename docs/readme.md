@@ -21,8 +21,6 @@
 
 ## Preview
 
-## Preview
-
 <table>
   <tr>
     <td align="center"><b>Login</b></td>
