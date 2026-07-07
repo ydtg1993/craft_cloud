@@ -31,8 +31,9 @@ dist/
 installer_output/
 *.spec.bak
 
-# ── Binary tools (download separately or via CI) ──────────────────
+# ── Binary tools (downloaded per-platform during build) ──────────
 scripts/ffmpeg.exe
+scripts/ffmpeg
 
 # ── IDE ────────────────────────────────────────────────────────────
 .idea/

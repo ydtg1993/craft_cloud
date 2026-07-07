@@ -58,6 +58,23 @@ if [ "$OS" = macos ]; then
         }
         rm -rf /tmp/cc.iconset
     fi
+
+    # ── ffmpeg (macOS) ────────────────────────────────────────
+    if [ ! -f scripts/ffmpeg ]; then
+        echo "==> Downloading ffmpeg..."
+        curl -sL "https://evermeet.cx/ffmpeg/getrelease/zip" -o /tmp/ffmpeg.zip
+        unzip -q /tmp/ffmpeg.zip -d scripts/
+        rm /tmp/ffmpeg.zip
+    fi
+elif [ "$OS" = linux ]; then
+    # ── ffmpeg (Linux) ────────────────────────────────────────
+    if [ ! -f scripts/ffmpeg ]; then
+        echo "==> Downloading ffmpeg..."
+        curl -sL "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz" -o /tmp/ffmpeg.tar.xz
+        tar xf /tmp/ffmpeg.tar.xz -C /tmp
+        cp /tmp/ffmpeg-*-amd64-static/ffmpeg scripts/ffmpeg
+        rm -rf /tmp/ffmpeg.tar.xz /tmp/ffmpeg-*-amd64-static
+    fi
 fi
 
 # ── Clean previous build ────────────────────────────────────────

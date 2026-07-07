@@ -78,6 +78,30 @@ jobs:
             rm -rf /tmp/cc.iconset
           fi
 
+      # ── ffmpeg (platform-specific binary) ──────────────────
+      - name: Download ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          curl -sL "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -o ffmpeg.zip
+          7z x ffmpeg.zip -offmpeg_tmp
+          cp ffmpeg_tmp/*/bin/ffmpeg.exe scripts/ffmpeg.exe
+          rm -rf ffmpeg.zip ffmpeg_tmp
+
+      - name: Download ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          curl -sL "https://evermeet.cx/ffmpeg/getrelease/zip" -o ffmpeg.zip
+          unzip -q ffmpeg.zip -d scripts/
+          rm ffmpeg.zip
+
+      - name: Download ffmpeg (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sL "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz" -o ffmpeg.tar.xz
+          tar xf ffmpeg.tar.xz
+          cp ffmpeg-*-amd64-static/ffmpeg scripts/ffmpeg
+          rm -rf ffmpeg.tar.xz ffmpeg-*-amd64-static
+
       # ── Dependencies ────────────────────────────────────────
       - name: Install Python dependencies
         run: |
