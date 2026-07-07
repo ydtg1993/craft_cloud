@@ -9,7 +9,8 @@ from PySide6.QtCore import Qt, Signal, QTimer, QSize, QUrl, QObject
 from PySide6.QtGui import QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
-from qfluentwidgets import ProgressRing, ImageLabel, MessageBoxBase, SubtitleLabel, ToolButton, FluentIcon
+from qfluentwidgets import ProgressRing, ImageLabel, MessageBoxBase, SubtitleLabel, ToolButton, FluentIcon, qconfig, Theme
+from qfluentwidgets import theme as qfw_theme
 from core.utils import MEDIA_EXTENSIONS
 
 from loguru import logger
@@ -30,10 +31,9 @@ class PreviewFlyoutView(MessageBoxBase):
 
     def __init__(self, file_info, task_manager, db, parent=None, cached_media_path=None):
         super().__init__(parent)
-        # 解决透明闪烁：强制不透明+白色背景+禁用亚克力
+        # 解决透明闪烁：强制不透明+禁用亚克力
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowOpacity(1.0)
-        self.setStyleSheet("background-color: white;")
         if hasattr(self, 'setBackgroundEffectEnabled'):
             self.setBackgroundEffectEnabled(False)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
@@ -57,12 +57,18 @@ class PreviewFlyoutView(MessageBoxBase):
         self._player_initialized = False
         self._pending_init_player = False
 
-        # UI 控件
+        # UI 控件引用（延迟创建）
         self.play_pause_btn = None
         self.position_slider = None
         self.time_label = None
         self.volume_slider = None
         self.volume_label = None
+        self.title_bar = None
+        self.title_label = None
+        self.close_btn = None
+        self.media_controls = None
+        self.audio_icon_label = None
+        self._text_edit = None
 
         # 隐藏底部按钮
         self.yesButton.hide()
@@ -74,15 +80,12 @@ class PreviewFlyoutView(MessageBoxBase):
         self._setup_title_bar()
         self.content_widget = QWidget()
         self.content_widget.setObjectName("PreviewContent")
-        self.content_widget.setStyleSheet(
-            "#PreviewContent { background-color: #FFFFFF; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }")
         self.content_layout = QVBoxLayout(self.content_widget)
         self.content_layout.setContentsMargins(10, 10, 10, 10)
         self.content_layout.setSpacing(0)
 
         # 下载进度界面
         self.download_widget = QWidget()
-        self.download_widget.setStyleSheet("background-color: transparent;")
         download_layout = QVBoxLayout(self.download_widget)
         download_layout.setAlignment(Qt.AlignCenter)
         self.progress_ring = ProgressRing()
@@ -91,8 +94,6 @@ class PreviewFlyoutView(MessageBoxBase):
         download_layout.addWidget(self.progress_ring, alignment=Qt.AlignCenter)
         self.progress_label = QLabel("0%")
         self.progress_label.setAlignment(Qt.AlignCenter)
-        self.progress_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; color: #333333; background: transparent;")
         download_layout.addWidget(self.progress_label)
         self.content_layout.addWidget(self.download_widget)
         self.viewLayout.addWidget(self.content_widget)
@@ -101,28 +102,132 @@ class PreviewFlyoutView(MessageBoxBase):
         self.progress.connect(self._on_progress)
         self.download_worker = None
 
+        # 应用主题颜色
+        self._apply_theme_colors()
+        qconfig.themeChanged.connect(self._apply_theme_colors)
+
         self._adjust_window_size()
         self._start_preview()
 
     def _setup_title_bar(self):
-        title_bar = QWidget()
-        title_bar.setFixedHeight(40)
-        title_bar.setStyleSheet("background-color: #F5F5F5; border-top-left-radius: 8px; border-top-right-radius: 8px;")
-        h_layout = QHBoxLayout(title_bar)
+        self.title_bar = QWidget()
+        self.title_bar.setFixedHeight(40)
+        h_layout = QHBoxLayout(self.title_bar)
         h_layout.setContentsMargins(15, 0, 10, 0)
         name = self.file_info.display_name or self.file_info.original_name
-        title_label = SubtitleLabel(name)
-        title_label.setStyleSheet("color: #000000; background: transparent;")
-        h_layout.addWidget(title_label, 1)
-        close_btn = ToolButton(FluentIcon.CLOSE)
-        close_btn.setIconSize(QSize(12, 12))
-        close_btn.setStyleSheet("""
-            ToolButton { background: transparent; border: none; border-radius: 4px; color: #000000; }
-            ToolButton:hover { background-color: #E0E0E0; }
-        """)
-        close_btn.clicked.connect(self._safe_close)
-        h_layout.addWidget(close_btn)
-        self.viewLayout.addWidget(title_bar)
+        self.title_label = SubtitleLabel(name)
+        h_layout.addWidget(self.title_label, 1)
+        self.close_btn = ToolButton(FluentIcon.CLOSE)
+        self.close_btn.setIconSize(QSize(12, 12))
+        self.close_btn.clicked.connect(self._safe_close)
+        h_layout.addWidget(self.close_btn)
+        self.viewLayout.addWidget(self.title_bar)
+
+    def _apply_theme_colors(self):
+        """根据当前主题（dark/light）刷新所有硬编码颜色。"""
+        is_dark = qfw_theme() == Theme.DARK
+
+        # ── 基础色板 ──
+        win_bg = "#1E1E1E" if is_dark else "#FFFFFF"
+        surface = "#2D2D2D" if is_dark else "#F5F5F5"
+        surface2 = "#353535" if is_dark else "#F0F0F0"
+        text_primary = "#FFFFFF" if is_dark else "#000000"
+        text_secondary = "#CCCCCC" if is_dark else "#333333"
+        btn_bg = "#444444" if is_dark else "#E0E0E0"
+        btn_hover = "#555555" if is_dark else "#D0D0D0"
+        btn_pressed = "#666666" if is_dark else "#C0C0C0"
+        slider_groove = "#555555" if is_dark else "#D0D0D0"
+        slider_handle = "#0078D4" if is_dark else "#0066ff"
+        radius = "8px"
+
+        # ── 窗口 & 内容 ──
+        self.setStyleSheet(f"background-color: {win_bg};")
+        self.content_widget.setStyleSheet(
+            f"#PreviewContent {{ background-color: {win_bg}; "
+            f"border-bottom-left-radius: {radius}; border-bottom-right-radius: {radius}; }}")
+
+        # ── 进度标签 ──
+        self.download_widget.setStyleSheet("background-color: transparent;")
+        self.progress_label.setStyleSheet(
+            f"font-size: 16px; font-weight: bold; color: {text_secondary}; background: transparent;")
+
+        # ── 标题栏 ──
+        if self.title_bar:
+            self.title_bar.setStyleSheet(
+                f"background-color: {surface}; "
+                f"border-top-left-radius: {radius}; border-top-right-radius: {radius};")
+        if self.title_label:
+            self.title_label.setStyleSheet(f"color: {text_primary}; background: transparent;")
+        if self.close_btn:
+            self.close_btn.setStyleSheet(f"""
+                ToolButton {{ background: transparent; border: none; border-radius: 4px; color: {text_primary}; }}
+                ToolButton:hover {{ background-color: {btn_hover}; }}
+            """)
+
+        # ── 媒体容器 ──
+        if self.media_container:
+            self.media_container.setStyleSheet(f"background-color: {win_bg};")
+
+        # ── 音频图标 ──
+        if self.audio_icon_label:
+            self.audio_icon_label.setStyleSheet(
+                f"background-color: {surface2}; border-radius: 10px;")
+
+        # ── 播放控制条 ──
+        if self.media_controls:
+            self.media_controls.setStyleSheet(
+                f"background-color: {surface}; border-radius: {radius};")
+
+        # ── 播放按钮 ──
+        if self.play_pause_btn:
+            self.play_pause_btn.setStyleSheet(f"""
+                QPushButton {{ background-color: {btn_bg}; border-radius: 18px; border: none; }}
+                QPushButton:hover {{ background-color: {btn_hover}; }}
+                QPushButton:pressed {{ background-color: {btn_pressed}; }}
+            """)
+
+        # ── 进度滑块 ──
+        if self.position_slider:
+            self.position_slider.setStyleSheet(f"""
+                QSlider::groove:horizontal {{
+                    background: {slider_groove}; height: 6px; border-radius: 3px;
+                }}
+                QSlider::handle:horizontal {{
+                    background: {slider_handle}; width: 14px; margin: -5px 0; border-radius: 7px;
+                }}
+                QSlider::sub-page:horizontal {{
+                    background: {slider_handle}; border-radius: 3px;
+                }}
+            """)
+
+        # ── 时间标签 ──
+        if self.time_label:
+            self.time_label.setStyleSheet(
+                f"color: {text_secondary}; font-size: 13px; background: transparent;")
+
+        # ── 音量滑块 ──
+        if self.volume_slider:
+            self.volume_slider.setStyleSheet(f"""
+                QSlider::groove:horizontal {{
+                    background: {slider_groove}; height: 4px; border-radius: 2px;
+                }}
+                QSlider::handle:horizontal {{
+                    background: {slider_handle}; width: 12px; margin: -4px 0; border-radius: 6px;
+                }}
+                QSlider::sub-page:horizontal {{
+                    background: {slider_handle}; border-radius: 2px;
+                }}
+            """)
+
+        # ── 文本预览 ──
+        if self._text_edit:
+            self._text_edit.setStyleSheet(
+                f"QTextEdit {{ background-color: {win_bg}; color: {text_primary}; "
+                f"border: none; padding: 10px; font-family: Consolas, monospace; }}")
+
+        # ── 视频背景保持纯黑 ──
+        if self.video_widget:
+            self.video_widget.setStyleSheet("background-color: black;")
 
     def _adjust_window_size(self):
         ext = Path(self.file_info.display_name or self.file_info.original_name).suffix.lower()
@@ -167,7 +272,7 @@ class PreviewFlyoutView(MessageBoxBase):
         self.temp_file = file_path
         self.download_widget.setVisible(False)
         self.media_container = QWidget()
-        self.media_container.setStyleSheet("background-color: #FFFFFF;")
+        self.media_container.setObjectName("MediaContainer")
         media_layout = QVBoxLayout(self.media_container)
         media_layout.setContentsMargins(0, 0, 0, 0)
         media_layout.setSpacing(0)
@@ -263,30 +368,23 @@ class PreviewFlyoutView(MessageBoxBase):
 
     def _setup_audio_preview(self, file_path, layout):
         self.media_path = file_path
-        audio_icon_label = QLabel()
-        audio_icon_label.setAlignment(Qt.AlignCenter)
-        audio_icon_label.setPixmap(self.style().standardIcon(QStyle.SP_MediaVolume).pixmap(64, 64))
-        audio_icon_label.setStyleSheet("background-color: #F0F0F0; border-radius: 10px;")
-        audio_icon_label.setFixedHeight(120)
-        layout.addWidget(audio_icon_label)
+        self.audio_icon_label = QLabel()
+        self.audio_icon_label.setAlignment(Qt.AlignCenter)
+        self.audio_icon_label.setPixmap(self.style().standardIcon(QStyle.SP_MediaVolume).pixmap(64, 64))
+        self.audio_icon_label.setFixedHeight(120)
+        layout.addWidget(self.audio_icon_label)
 
         control_widget = self._create_media_controls()
         layout.addWidget(control_widget)
 
     def _create_media_controls(self):
-        container = QWidget()
-        container.setStyleSheet("background-color: #F5F5F5; border-radius: 8px;")
-        ctrl_layout = QHBoxLayout(container)
+        self.media_controls = QWidget()
+        ctrl_layout = QHBoxLayout(self.media_controls)
         ctrl_layout.setContentsMargins(15, 8, 15, 8)
 
         self.play_pause_btn = QPushButton()
         self.play_pause_btn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.play_pause_btn.setFixedSize(36, 36)
-        self.play_pause_btn.setStyleSheet("""
-            QPushButton { background-color: #E0E0E0; border-radius: 18px; border: none; }
-            QPushButton:hover { background-color: #D0D0D0; }
-            QPushButton:pressed { background-color: #C0C0C0; }
-        """)
         self.play_pause_btn.clicked.connect(self._toggle_playback)
         ctrl_layout.addWidget(self.play_pause_btn)
 
@@ -294,22 +392,10 @@ class PreviewFlyoutView(MessageBoxBase):
         self.position_slider.setRange(0, 0)
         self.position_slider.setSingleStep(1000)
         self.position_slider.setPageStep(5000)
-        self.position_slider.setStyleSheet("""
-            QSlider::groove:horizontal { 
-                background: #D0D0D0; height: 6px; border-radius: 3px;
-            }
-            QSlider::handle:horizontal { 
-                background: #0066ff; width: 14px; margin: -5px 0; border-radius: 7px;
-            }
-            QSlider::sub-page:horizontal { 
-                background: #0066ff; border-radius: 3px;
-            }
-        """)
         self.position_slider.sliderMoved.connect(self._set_position)
         ctrl_layout.addWidget(self.position_slider)
 
         self.time_label = QLabel("00:00 / 00:00")
-        self.time_label.setStyleSheet("color: #333333; font-size: 13px; background: transparent;")
         self.time_label.setAlignment(Qt.AlignCenter)
         ctrl_layout.addWidget(self.time_label)
 
@@ -318,17 +404,6 @@ class PreviewFlyoutView(MessageBoxBase):
         self.volume_slider.setValue(70)
         self.volume_slider.setFixedWidth(80)
         self.volume_slider.setToolTip(self.tr("Volume"))
-        self.volume_slider.setStyleSheet("""
-            QSlider::groove:horizontal { 
-                background: #D0D0D0; height: 4px; border-radius: 2px;
-            }
-            QSlider::handle:horizontal { 
-                background: #0066ff; width: 12px; margin: -4px 0; border-radius: 6px;
-            }
-            QSlider::sub-page:horizontal { 
-                background: #0066ff; border-radius: 2px;
-            }
-        """)
         self.volume_slider.valueChanged.connect(self._set_volume)
         ctrl_layout.addWidget(self.volume_slider)
 
@@ -336,7 +411,7 @@ class PreviewFlyoutView(MessageBoxBase):
         self.volume_label.setPixmap(self.style().standardIcon(QStyle.SP_MediaVolume).pixmap(16, 16))
         ctrl_layout.addWidget(self.volume_label)
 
-        return container
+        return self.media_controls
 
     def _toggle_playback(self):
         if not self.player:
@@ -391,13 +466,11 @@ class PreviewFlyoutView(MessageBoxBase):
                 text = data.decode('latin-1')
             text_edit = QTextEdit()
             text_edit.setReadOnly(True)
+            text_edit.setObjectName("PreviewTextEdit")
             text_edit.setPlainText(text)
-            text_edit.setStyleSheet("""
-                QTextEdit {
-                    background-color: #FFFFFF; color: #333333; border: none;
-                    padding: 10px; font-family: Consolas, monospace;
-                }
-            """)
+            text_edit.setStyleSheet(
+                "QTextEdit { border: none; padding: 10px; font-family: Consolas, monospace; }")
+            self._text_edit = text_edit
             layout.addWidget(text_edit)
         except Exception as e:
             self._show_error(f"{self.tr('Cannot read file')}: {str(e)}")
