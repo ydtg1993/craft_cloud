@@ -1,10 +1,10 @@
 ﻿from PySide6.QtWidgets import (
     QStackedWidget, QWidget, QVBoxLayout, QListWidgetItem,
-    QApplication, QStyle, QHeaderView
+    QApplication, QStyle, QHeaderView, QFrame
 )
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
 from PySide6.QtCore import Signal, Qt, QSize, QRect, QPoint
-from qfluentwidgets import FluentIcon, RoundMenu, Action
+from qfluentwidgets import FluentIcon, RoundMenu, Action, ScrollArea
 from view.file_table import FileTableView
 from view.file_icon import FileIconView
 from view.file_table_model import FileTableModel
@@ -26,19 +26,44 @@ class FileViewStack(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.stack = QStackedWidget()
         self.file_model = FileTableModel()
+
+        # -- table view --
         self.table_view = FileTableView()
         self.table_view.setModel(self.file_model)
         self.table_view.doubleClicked.connect(self._on_table_double_clicked)
         self.table_view.move_file_callback = self._on_file_moved
+        self.table_view.customContextMenuRequested.connect(self._show_table_context_menu)
+        self._setup_table_columns()
+        self.table_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.table_scroll = ScrollArea()
+        self.table_scroll.setWidgetResizable(False)
+        self.table_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.table_scroll.enableTransparentBackground()
+        self.table_scroll.setWidget(self.table_view)
+
+        # -- icon view --
         self.icon_view = FileIconView()
         self.icon_view.doubleClicked.connect(self._on_icon_double_clicked)
         self.icon_view.move_file_callback = self._on_file_moved
-        self.stack.addWidget(self.table_view)
-        self.stack.addWidget(self.icon_view)
-        layout.addWidget(self.stack)
-        self._setup_table_columns()
-        self.table_view.customContextMenuRequested.connect(self._show_table_context_menu)
         self.icon_view.customContextMenuRequested.connect(self._show_icon_context_menu)
+        self.icon_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.icon_scroll = ScrollArea()
+        self.icon_scroll.setWidgetResizable(False)
+        self.icon_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.icon_scroll.enableTransparentBackground()
+        self.icon_scroll.setWidget(self.icon_view)
+
+        self.stack.addWidget(self.table_scroll)
+        self.stack.addWidget(self.icon_scroll)
+        layout.addWidget(self.stack)
+
+        # 数据变化 / 视图切换时同步内容尺寸
+        self.file_model.rowsInserted.connect(self._sync_content_size)
+        self.file_model.rowsRemoved.connect(self._sync_content_size)
+        self.file_model.modelReset.connect(self._sync_content_size)
+        self.stack.currentChanged.connect(self._sync_content_size)
 
     def _setup_table_columns(self):
         self.table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -51,6 +76,33 @@ class FileViewStack(QWidget):
         header.setSectionResizeMode(3, QHeaderView.Fixed)
         self.table_view.setColumnWidth(3, 100)
         self.table_view.setTextElideMode(Qt.ElideRight)
+
+    def _sync_content_size(self):
+        """根据当前视图内容计算所需尺寸，让 ScrollArea 正确显示滚动条。"""
+        current = self.stack.currentWidget()
+        if current is self.table_scroll:
+            vp_w = self.table_scroll.viewport().width()
+            h = self.table_view.horizontalHeader().height()
+            for row in range(self.file_model.rowCount()):
+                h += self.table_view.rowHeight(row)
+            h = max(h + 2, 100)
+            self.table_view.resize(max(vp_w, 1), h)
+        elif current is self.icon_scroll:
+            vp_w = self.icon_scroll.viewport().width()
+            count = self.icon_view.count()
+            if count > 0:
+                grid_w = self.icon_view.gridSize().width()
+                spacing = self.icon_view.spacing()
+                cols = max(1, (vp_w - spacing) // (grid_w + spacing))
+                rows = (count + cols - 1) // cols
+                h = rows * (self.icon_view.gridSize().height() + spacing) + 30
+            else:
+                h = 100
+            self.icon_view.resize(max(vp_w, 1), max(h, 100))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._sync_content_size()
 
     def load_items(self, items):
         self.file_model.load_items(items)
@@ -108,6 +160,7 @@ class FileViewStack(QWidget):
             is_sync_root = 1 if (item.is_dir and dir_info and dir_info.is_sync == 1 and dir_info.parent_id == 0) else 0
             list_item.setData(Qt.UserRole, IconViewItemData(item.id, item.is_dir, is_sync_root))
             self.icon_view.addItem(list_item)
+        self._sync_content_size()
 
     def switch_view(self, mode):
         self.stack.setCurrentIndex(mode)

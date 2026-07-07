@@ -2,16 +2,15 @@
 
 布局结构（三层卡片）：
   - 顶部工具栏卡片（80px）：搜索/筛选（上层）、视图切换/排序（下层），右对齐
-  - HeaderCardWidget：面包屑(header) + FileViewStack(body)，自动撑满
+  - 内容卡片：自定义 header（面包屑）+ FileViewStack（内部 ScrollArea），自动撑满
   - 底部状态栏卡片（25px）：当日云盘用量统计
 """
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame, QApplication
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
 from PySide6.QtGui import QColor, QPalette
 from qfluentwidgets import (FluentIcon, BreadcrumbBar, CardWidget, Theme,
-                            HeaderCardWidget, ToolButton, LineEdit, ComboBox, qconfig)
+                            ToolButton, LineEdit, ComboBox, qconfig)
 from qfluentwidgets import theme as qfw_theme
-from qfluentwidgets.common.style_sheet import FluentStyleSheet
 from view.file_view_stack import FileViewStack
 
 
@@ -85,27 +84,30 @@ class HomePage(QWidget):
         self._toolbar_card = toolbar_card
 
         # ================================================================
-        # 2. HeaderCardWidget：面包屑 + 文件视图 (中间主区域，自动撑满)
+        # 2. 内容卡片：自定义 header(面包屑) + ScrollArea(FileViewStack)
         # ================================================================
-        content_card = HeaderCardWidget(self)
+        content_card = CardWidget()
         self._content_card = content_card
+        card_layout = QVBoxLayout(content_card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(0)
 
-        # header：隐藏默认标题，放入面包屑
-        content_card.headerLabel.hide()
-        content_card.headerLayout.setContentsMargins(12, 0, 12, 0)
-        content_card.headerView.setFixedHeight(36)
+        # header：面包屑
+        header = QWidget()
+        header.setFixedHeight(36)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(12, 0, 12, 0)
         self.breadcrumb = BreadcrumbBar()
-        content_card.headerLayout.addWidget(self.breadcrumb, 1)
+        header_layout.addWidget(self.breadcrumb, 1)
+        card_layout.addWidget(header)
 
-        # view：放入 FileViewStack，去掉内边距
-        content_card.viewLayout.setContentsMargins(0, 0, 0, 0)
+        # body：FileViewStack（内部各视图自带 QFluentWidgets ScrollArea）
         self.file_view = FileViewStack(file_manager, parent)
-
         self.file_view.stack.setStyleSheet("border: none;")
         self.file_view.table_view.setFrameShape(QFrame.Shape.NoFrame)
         self.file_view.icon_view.setFrameShape(QFrame.Shape.NoFrame)
+        card_layout.addWidget(self.file_view, 1)
 
-        content_card.viewLayout.addWidget(self.file_view)
         main_layout.addWidget(content_card, 1)
 
         # ================================================================
@@ -204,18 +206,11 @@ class HomePage(QWidget):
 
     def _on_theme_changed(self):
         """主题切换时更新所有卡片和内部视图的主题颜色。"""
-        # 普通 CardWidget：直接设色并重绘
-        for card in (self._toolbar_card, self._status_card):
+        # 所有 CardWidget：直接设色并重绘
+        for card in (self._toolbar_card, self._content_card, self._status_card):
             card.backgroundColorAni.stop()
             card.setBackgroundColor(card._normalBackgroundColor())
             card.update()
-
-        # HeaderCardWidget：背景 + 重新应用主题 QSS
-        self._content_card.backgroundColorAni.stop()
-        self._content_card.setBackgroundColor(
-            self._content_card._normalBackgroundColor())
-        FluentStyleSheet.CARD_WIDGET.apply(self._content_card)
-        self._content_card.update()
 
         # 文件列表视图：palette + 状态栏
         self._refresh_view_theme()
