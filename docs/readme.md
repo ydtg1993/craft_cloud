@@ -19,6 +19,48 @@
 
 ---
 
+## Preview
+
+<table>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
+  </tr>
+</table>
+
+### Tutorial
+
+<table>
+  <tr>
+    <td align="center"><b>Login</b></td>
+    <td align="center"><b>File Operations</b></td>
+    <td align="center"><b>Auto Sync</b></td>
+  </tr>
+  <tr>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
+    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
+    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
+  </a>
+</p>
+
+---
+
+> To obtain Telegram API credentials: visit [my.telegram.org](https://my.telegram.org/), create an application, and get your `api_id` and `api_hash`.
+
 ## Features
 
 - 🔐 **Telegram Login**
@@ -61,48 +103,6 @@
   Structured logging via loguru — console + daily rotating files, kept for 7 days. Telethon session noise is filtered.
 
 ---
-
-## Preview
-
-<table>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview1.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview2.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview3.png"/></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview4.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview5.png"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/picture/preview6.png"/></td>
-  </tr>
-</table>
-
-### Tutorial
-
-<table>
-  <tr>
-    <td align="center"><b>Login</b></td>
-    <td align="center"><b>File Operations</b></td>
-    <td align="center"><b>Auto Sync</b></td>
-  </tr>
-  <tr>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/login_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/operate_tutorial.gif"/></td>
-    <td><img width="300" src="https://cdn.jsdelivr.net/gh/ydtg1993/craft_cloud@main/docs/tutorial/sync_tutorial.gif"/></td>
-  </tr>
-</table>
-
----
-
-<p align="center">
-  <a href="https://github.com/ydtg1993/craft_cloud/releases" target="_blank">
-    <img align="center" alt="download" src="https://nickemanarin.github.io/ScreenToGif-Website/wiki/download-now.png"/>
-  </a>
-</p>
-
----
-
-> To obtain Telegram API credentials: visit [my.telegram.org](https://my.telegram.org/), create an application, and get your `api_id` and `api_hash`.
 
 ## Architecture
 
