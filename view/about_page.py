@@ -2,8 +2,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame)
 from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, SubtitleLabel,
                             GroupHeaderCardWidget, HeaderCardWidget, FluentIcon,
-                            HyperlinkButton, ScrollArea)
+                            HyperlinkButton, ScrollArea, Theme)
 from core.translator import tr
+from qfluentwidgets import theme as qfw_theme
 
 VERSION = "2.0.0"
 GITHUB_URL = "https://github.com/ydtg1993/craft_cloud"
@@ -88,6 +89,9 @@ class AboutPage(QWidget):
         card_layout.setContentsMargins(0, 0, 0, 0)
         card_layout.setSpacing(10)
 
+        is_dark = qfw_theme() == Theme.DARK
+        self.text_color = "#FFFFFF" if is_dark else "#000000"
+
         self._build_app_info(card_layout)
         self._build_developer(card_layout)
         self._build_features(card_layout)
@@ -166,10 +170,13 @@ class AboutPage(QWidget):
                     "Files are stored in your personal Telegram channels, "
                     "no third-party access"),
         ]
+
         for feature in features:
             row = QLabel(feature)
             row.setWordWrap(True)
-            row.setStyleSheet("QLabel { font-size: 13px; padding: 2px 0; }")
+            row.setStyleSheet(
+                f"QLabel {{ font-size: 13px; padding: 2px 0; color: {self.text_color}; }}"
+            )
             card.vBoxLayout.addWidget(row)
         card.setContentsMargins(10, 10, 10, 10)
         layout.addWidget(card)
@@ -226,7 +233,7 @@ class AboutPage(QWidget):
                 item = CaptionLabel(f"  •  {change}")
                 item.setWordWrap(True)
                 item.setStyleSheet(
-                    "QLabel { font-size: 12px; }")
+                    f"QLabel {{ font-size: 12px; color: {self.text_color}; }}")
                 card.vBoxLayout.addWidget(item)
 
             # 版本之间加一点间距

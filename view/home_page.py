@@ -101,28 +101,9 @@ class HomePage(QWidget):
         content_card.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.file_view = FileViewStack(file_manager, parent)
 
-        # 统一样式：去除边框 + 透明背景（让卡片背景色透出）
-        _file_view_qss = """
-            QStackedWidget, QTableView, QListWidget {
-                border: none;
-                outline: none;
-                background-color: transparent;
-            }
-            QTableView::item, QListWidget::item {
-                background-color: transparent;
-            }
-            QHeaderView::section {
-                background-color: transparent;
-            }
-        """
-        self.file_view.setStyleSheet(_file_view_qss)
         self.file_view.stack.setStyleSheet("border: none;")
         self.file_view.table_view.setFrameShape(QFrame.Shape.NoFrame)
         self.file_view.icon_view.setFrameShape(QFrame.Shape.NoFrame)
-
-        # 去除 viewport 默认背景
-        self.file_view.table_view.viewport().setStyleSheet("background: transparent;")
-        self.file_view.icon_view.viewport().setStyleSheet("background: transparent;")
 
         content_card.viewLayout.addWidget(self.file_view)
         main_layout.addWidget(content_card, 1)
@@ -168,21 +149,57 @@ class HomePage(QWidget):
         qconfig.themeChanged.connect(self._on_theme_changed)
 
     def _refresh_view_theme(self):
-        """更新 file_view 内部 QTableView/QListWidget 的主题相关颜色。"""
+        """更新 file_view 内部控件的主题样式（背景/文字色/选中色）。"""
         is_dark = qfw_theme() == Theme.DARK
-        text_color = QColor(255, 255, 255) if is_dark else QColor(0, 0, 0)
-        highlight_color = QColor(255, 255, 255, 30) if is_dark else QColor(0, 0, 0, 20)
+        text_color = "#FFFFFF" if is_dark else "#000000"
+        highlight_bg = "rgba(255, 255, 255, 0.18)" if is_dark else "rgba(0, 0, 0, 0.10)"
+        alt_bg = "rgba(255, 255, 255, 0.04)" if is_dark else "rgba(0, 0, 0, 0.02)"
+
+        # QSS：透明背景 + 主题文字色
+        qss = f"""
+            QStackedWidget, QTableView, QListWidget {{
+                border: none;
+                outline: none;
+                background-color: transparent;
+                color: {text_color};
+            }}
+            QTableView::item, QListWidget::item {{
+                background-color: transparent;
+                color: {text_color};
+            }}
+            QTableView::item:selected, QListWidget::item:selected {{
+                background-color: {highlight_bg};
+                color: {text_color};
+            }}
+            QHeaderView::section {{
+                background-color: transparent;
+                color: {text_color};
+                border: none;
+                padding: 4px 8px;
+            }}
+        """
+        self.file_view.setStyleSheet(qss)
+        self.file_view.table_view.viewport().setStyleSheet(
+            f"background: transparent; color: {text_color};")
+        self.file_view.icon_view.viewport().setStyleSheet(
+            f"background: transparent; color: {text_color};")
+
+        # Palette：兜底（QSS 覆盖不到的角落）
+        highlight_color = QColor(255, 255, 255, 45) if is_dark else QColor(0, 0, 0, 50)
+        text_qcolor = QColor(255, 255, 255) if is_dark else QColor(0, 0, 0)
 
         p = self.file_view.table_view.palette()
         p.setColor(QPalette.Base, Qt.transparent)
-        p.setColor(QPalette.Text, text_color)
+        p.setColor(QPalette.Text, text_qcolor)
         p.setColor(QPalette.Highlight, highlight_color)
+        p.setColor(QPalette.HighlightedText, text_qcolor)
         self.file_view.table_view.setPalette(p)
 
         p2 = self.file_view.icon_view.palette()
         p2.setColor(QPalette.Base, Qt.transparent)
-        p2.setColor(QPalette.Text, text_color)
+        p2.setColor(QPalette.Text, text_qcolor)
         p2.setColor(QPalette.Highlight, highlight_color)
+        p2.setColor(QPalette.HighlightedText, text_qcolor)
         self.file_view.icon_view.setPalette(p2)
 
     def _on_theme_changed(self):
