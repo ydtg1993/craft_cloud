@@ -32,7 +32,6 @@ TRANSLATIONS = {
         'Refresh QR Code': 'Actualiser QR Code',
         'Core Features': 'Fonctionnalités principales',
         'License': 'Licence', 'Acknowledgments': 'Remerciements',
-        'Version History': 'Historique des versions',
         'Developer': 'Développeur', 'Author': 'Auteur', 'Website': 'Site web',
         'Project Homepage': "Page d'accueil du projet",
         'Name': 'Nom', 'Application': 'Application',
@@ -55,25 +54,6 @@ TRANSLATIONS = {
         'Chinese word segmentation library': 'Bibliothèque de segmentation de mots chinois',
         'Disk cache library': 'Bibliothèque de cache disque',
         'QR code generation library': 'Bibliothèque de génération de QR codes',
-        'Complete architecture refactoring: layered architecture '
-        '(core/model/services/view), SOLID principles':
-            "Refonte complète de l'architecture : architecture en couches "
-            "(core/model/services/view), principes SOLID",
-        'Technology stack modernization: SQLAlchemy 2.x ORM, '
-        'Pydantic config, loguru logging':
-            "Modernisation de la pile technologique : SQLAlchemy 2.x ORM, "
-            "configuration Pydantic, journalisation loguru",
-        'UI upgrade: qfluentwidgets Fluent Design component library':
-            "Mise à jour UI : bibliothèque de composants qfluentwidgets Fluent Design",
-        'New Task Queue unified scheduling, Auto Sync dashboard':
-            'Nouvelle file d\'attente unifiée, tableau de bord de synchronisation automatique',
-        'System tray minimization with background auto sync':
-            'Minimisation dans la barre d\'état avec synchronisation automatique en arrière-plan',
-        'Whoosh full-text search + Chinese word segmentation (jieba)':
-            'Recherche plein texte Whoosh + segmentation de mots chinois (jieba)',
-        'Initial release based on PyQt5': 'Version initiale basée sur PyQt5',
-        'Basic file upload/download functionality': 'Fonctionnalité de base de téléchargement',
-        'Telegram channel-based storage': 'Stockage basé sur les canaux Telegram',
     },
     'de': {
         'Confirm': 'Bestätigen', 'Cancel': 'Abbrechen', 'OK': 'OK', 'Save': 'Speichern',
@@ -98,7 +78,6 @@ TRANSLATIONS = {
         'Refresh QR Code': 'QR-Code aktualisieren',
         'Core Features': 'Kernfunktionen', 'License': 'Lizenz',
         'Acknowledgments': 'Danksagungen',
-        'Version History': 'Versionsverlauf',
         'Developer': 'Entwickler', 'Author': 'Autor', 'Website': 'Webseite',
         'Project Homepage': 'Projekt-Homepage',
         'Name': 'Name', 'Application': 'Anwendung',
@@ -121,25 +100,6 @@ TRANSLATIONS = {
         'Chinese word segmentation library': 'Chinesische Wortsegmentierungsbibliothek',
         'Disk cache library': 'Disk-Cache-Bibliothek',
         'QR code generation library': 'QR-Code-Generierungsbibliothek',
-        'Complete architecture refactoring: layered architecture '
-        '(core/model/services/view), SOLID principles':
-            'Vollständige Architektur-Überarbeitung: Schichtenarchitektur '
-            '(core/model/services/view), SOLID-Prinzipien',
-        'Technology stack modernization: SQLAlchemy 2.x ORM, '
-        'Pydantic config, loguru logging':
-            'Modernisierung des Technologie-Stacks: SQLAlchemy 2.x ORM, '
-            'Pydantic-Konfiguration, loguru-Protokollierung',
-        'UI upgrade: qfluentwidgets Fluent Design component library':
-            'UI-Upgrade: qfluentwidgets Fluent Design-Komponentenbibliothek',
-        'New Task Queue unified scheduling, Auto Sync dashboard':
-            'Neue einheitliche Aufgabenwarteschlange, Auto-Sync-Dashboard',
-        'System tray minimization with background auto sync':
-            'Minimierung in die Taskleiste mit Hintergrund-Auto-Sync',
-        'Whoosh full-text search + Chinese word segmentation (jieba)':
-            'Whoosh-Volltextsuche + chinesische Wortsegmentierung (jieba)',
-        'Initial release based on PyQt5': 'Erstveröffentlichung basierend auf PyQt5',
-        'Basic file upload/download functionality': 'Grundlegende Datei-Upload/Download-Funktionalität',
-        'Telegram channel-based storage': 'Telegram-Kanal-basierte Speicherung',
     },
     'ru': {
         'Confirm': 'Подтвердить', 'Cancel': 'Отмена', 'OK': 'ОК', 'Save': 'Сохранить',
@@ -164,7 +124,6 @@ TRANSLATIONS = {
         'Refresh QR Code': 'Обновить QR-код',
         'Core Features': 'Основные функции', 'License': 'Лицензия',
         'Acknowledgments': 'Благодарности',
-        'Version History': 'История версий',
         'Developer': 'Разработчик', 'Author': 'Автор', 'Website': 'Сайт',
         'Project Homepage': 'Домашняя страница проекта',
         'Name': 'Имя', 'Application': 'Приложение',
@@ -187,25 +146,6 @@ TRANSLATIONS = {
         'Chinese word segmentation library': 'Библиотека сегментации китайских слов',
         'Disk cache library': 'Библиотека дискового кэша',
         'QR code generation library': 'Библиотека генерации QR-кодов',
-        'Complete architecture refactoring: layered architecture '
-        '(core/model/services/view), SOLID principles':
-            'Полный рефакторинг архитектуры: многоуровневая архитектура '
-            '(core/model/services/view), принципы SOLID',
-        'Technology stack modernization: SQLAlchemy 2.x ORM, '
-        'Pydantic config, loguru logging':
-            'Модернизация технологического стека: SQLAlchemy 2.x ORM, '
-            'конфигурация Pydantic, логирование loguru',
-        'UI upgrade: qfluentwidgets Fluent Design component library':
-            'Обновление UI: библиотека компонентов qfluentwidgets Fluent Design',
-        'New Task Queue unified scheduling, Auto Sync dashboard':
-            'Новая очередь задач, панель автосинхронизации',
-        'System tray minimization with background auto sync':
-            'Сворачивание в системный трей с фоновой автосинхронизацией',
-        'Whoosh full-text search + Chinese word segmentation (jieba)':
-            'Полнотекстовый поиск Whoosh + сегментация китайских слов (jieba)',
-        'Initial release based on PyQt5': 'Первый выпуск на основе PyQt5',
-        'Basic file upload/download functionality': 'Базовая функциональность загрузки/скачивания файлов',
-        'Telegram channel-based storage': 'Хранилище на основе Telegram-каналов',
     },
     'ko': {
         'Confirm': '확인', 'Cancel': '취소', 'OK': '확인', 'Save': '저장',
@@ -230,7 +170,6 @@ TRANSLATIONS = {
         'Refresh QR Code': 'QR 코드 새로고침',
         'Core Features': '주요 기능', 'License': '라이선스',
         'Acknowledgments': '감사의 글',
-        'Version History': '버전 기록',
         'Developer': '개발자', 'Author': '제작자', 'Website': '웹사이트',
         'Project Homepage': '프로젝트 홈페이지',
         'Name': '이름', 'Application': '애플리케이션',
@@ -253,25 +192,6 @@ TRANSLATIONS = {
         'Chinese word segmentation library': '중국어 단어 분할 라이브러리',
         'Disk cache library': '디스크 캐시 라이브러리',
         'QR code generation library': 'QR 코드 생성 라이브러리',
-        'Complete architecture refactoring: layered architecture '
-        '(core/model/services/view), SOLID principles':
-            '전체 아키텍처 리팩토링: 계층형 아키텍처 '
-            '(core/model/services/view), SOLID 원칙',
-        'Technology stack modernization: SQLAlchemy 2.x ORM, '
-        'Pydantic config, loguru logging':
-            '기술 스택 현대화: SQLAlchemy 2.x ORM, '
-            'Pydantic 구성, loguru 로깅',
-        'UI upgrade: qfluentwidgets Fluent Design component library':
-            'UI 업그레이드: qfluentwidgets Fluent Design 컴포넌트 라이브러리',
-        'New Task Queue unified scheduling, Auto Sync dashboard':
-            '새로운 작업 대기열 통합 스케줄링, 자동 동기화 대시보드',
-        'System tray minimization with background auto sync':
-            '시스템 트레이 최소화 및 백그라운드 자동 동기화',
-        'Whoosh full-text search + Chinese word segmentation (jieba)':
-            'Whoosh 전체 텍스트 검색 + 중국어 단어 분할 (jieba)',
-        'Initial release based on PyQt5': 'PyQt5 기반 초기 릴리스',
-        'Basic file upload/download functionality': '기본 파일 업로드/다운로드 기능',
-        'Telegram channel-based storage': 'Telegram 채널 기반 스토리지',
         '(not configured)': '(구성되지 않음)',
         '1. API Credentials': '1. API 자격 증명',
         '2. Scan to Login': '2. 스캔하여 로그인',

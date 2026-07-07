@@ -1,7 +1,7 @@
-"""AboutPage — 关于页面，展示软件信息、开发者、功能、许可证、致谢和更新日志。"""
+"""AboutPage — 关于页面，展示软件信息、开发者、功能、许可证和致谢。"""
 import shiboken6
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame)
-from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, SubtitleLabel,
+from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel,
                             GroupHeaderCardWidget, HeaderCardWidget, FluentIcon,
                             HyperlinkButton, ScrollArea, Theme, qconfig)
 from core.translator import tr
@@ -37,25 +37,6 @@ ACKNOWLEDGMENTS = [
      tr("QR code generation library")),
 ]
 
-# ── 版本历史 ──────────────────────────────────────────────────
-CHANGELOG = [
-    ("v2.0.0", "2026-06", [
-        tr("Complete architecture refactoring: layered architecture "
-           "(core/model/services/view), SOLID principles"),
-        tr("Technology stack modernization: SQLAlchemy 2.x ORM, "
-           "Pydantic config, loguru logging"),
-        tr("UI upgrade: qfluentwidgets Fluent Design component library"),
-        tr("New Task Queue unified scheduling, Auto Sync dashboard"),
-        tr("System tray minimization with background auto sync"),
-        tr("Whoosh full-text search + Chinese word segmentation (jieba)"),
-    ]),
-    ("v1.x", "2024 — 2025", [
-        tr("Initial release based on PyQt5"),
-        tr("Basic file upload/download functionality"),
-        tr("Telegram channel-based storage"),
-    ]),
-]
-
 
 class _SectionCard(GroupHeaderCardWidget):
     """通用信息分区卡片，每行用 addGroup 展示。"""
@@ -66,7 +47,7 @@ class _SectionCard(GroupHeaderCardWidget):
 
 
 class AboutPage(QWidget):
-    """关于页面 —— 软件信息、开发者、功能、许可证、致谢、更新日志。"""
+    """关于页面 —— 软件信息、开发者、功能、许可证、致谢。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -97,7 +78,6 @@ class AboutPage(QWidget):
         self._build_features(card_layout)
         self._build_license(card_layout)
         self._build_acknowledgments(card_layout)
-        self._build_changelog(card_layout)
 
         card_layout.addStretch()
         scroll.setWidget(container)
@@ -223,30 +203,9 @@ class AboutPage(QWidget):
         card.setContentsMargins(10, 10, 10, 10)
         layout.addWidget(card)
 
-    # ── 更新日志 ───────────────────────────────────────────────
-    def _build_changelog(self, layout):
-        card = _SectionCard(self.tr("Version History"), self)
-
-        for version, date, changes in CHANGELOG:
-            header = SubtitleLabel(f"{version}  ({date})")
-            card.vBoxLayout.addWidget(header)
-
-            for change in changes:
-                item = CaptionLabel(f"  •  {change}")
-                item.setWordWrap(True)
-                card.vBoxLayout.addWidget(item)
-                self._theme_labels.append((item, "font-size: 12px;"))
-
-            # 版本之间加一点间距
-            spacer = QWidget()
-            spacer.setFixedHeight(6)
-            card.vBoxLayout.addWidget(spacer)
-        card.setContentsMargins(10, 10, 10, 10)
-        layout.addWidget(card)
-
     # ── 主题适配 ───────────────────────────────────────────────
     def _apply_theme_colors(self):
-        """主题切换时刷新 feature / changelog 标签的文字颜色。"""
+        """主题切换时刷新 feature 标签的文字颜色。"""
         is_dark = qfw_theme() == Theme.DARK
         c = "#FFFFFF" if is_dark else "#000000"
         for lbl, base in self._theme_labels:

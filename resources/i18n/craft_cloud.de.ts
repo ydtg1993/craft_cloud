@@ -342,16 +342,6 @@ Einstellungen → Geräte → Desktop verknüpfen</translation></message>
     <message><source>Chinese word segmentation library</source><translation>Chinesische Wortsegmentierungsbibliothek</translation></message>
     <message><source>Disk cache library</source><translation>Disk-Cache-Bibliothek</translation></message>
     <message><source>QR code generation library</source><translation>QR-Code-Generierungsbibliothek</translation></message>
-    <message><source>Version History</source><translation>Versionsverlauf</translation></message>
-    <message><source>Complete architecture refactoring: layered architecture (core/model/services/view), SOLID principles</source><translation>Vollständige Architektur-Überarbeitung: Schichtenarchitektur (core/model/services/view), SOLID-Prinzipien</translation></message>
-    <message><source>Technology stack modernization: SQLAlchemy 2.x ORM, Pydantic config, loguru logging</source><translation>Modernisierung des Technologie-Stacks: SQLAlchemy 2.x ORM, Pydantic-Konfiguration, loguru-Protokollierung</translation></message>
-    <message><source>UI upgrade: qfluentwidgets Fluent Design component library</source><translation>UI-Upgrade: qfluentwidgets Fluent Design-Komponentenbibliothek</translation></message>
-    <message><source>New Task Queue unified scheduling, Auto Sync dashboard</source><translation>Neue einheitliche Aufgabenwarteschlange, Auto-Sync-Dashboard</translation></message>
-    <message><source>System tray minimization with background auto sync</source><translation>Minimierung in die Taskleiste mit Hintergrund-Auto-Sync</translation></message>
-    <message><source>Whoosh full-text search + Chinese word segmentation (jieba)</source><translation>Whoosh-Volltextsuche + chinesische Wortsegmentierung (jieba)</translation></message>
-    <message><source>Initial release based on PyQt5</source><translation>Erstveröffentlichung basierend auf PyQt5</translation></message>
-    <message><source>Basic file upload/download functionality</source><translation>Grundlegende Datei-Upload/Download-Funktionalität</translation></message>
-    <message><source>Telegram channel-based storage</source><translation>Telegram-Kanal-basierte Speicherung</translation></message>
 
     
     <message><source>Failed to create directory</source><translation>Erstellen des Verzeichnisses fehlgeschlagen</translation></message>

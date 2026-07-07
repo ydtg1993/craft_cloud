@@ -342,16 +342,6 @@ Settings - Devices - Link Desktop</source><translation>Telegram 앱에서 스캔
     <message><source>Chinese word segmentation library</source><translation>중국어 단어 분할 라이브러리</translation></message>
     <message><source>Disk cache library</source><translation>디스크 캐시 라이브러리</translation></message>
     <message><source>QR code generation library</source><translation>QR 코드 생성 라이브러리</translation></message>
-    <message><source>Version History</source><translation>버전 기록</translation></message>
-    <message><source>Complete architecture refactoring: layered architecture (core/model/services/view), SOLID principles</source><translation>전체 아키텍처 리팩토링: 계층형 아키텍처 (core/model/services/view), SOLID 원칙</translation></message>
-    <message><source>Technology stack modernization: SQLAlchemy 2.x ORM, Pydantic config, loguru logging</source><translation>기술 스택 현대화: SQLAlchemy 2.x ORM, Pydantic 구성, loguru 로깅</translation></message>
-    <message><source>UI upgrade: qfluentwidgets Fluent Design component library</source><translation>UI 업그레이드: qfluentwidgets Fluent Design 컴포넌트 라이브러리</translation></message>
-    <message><source>New Task Queue unified scheduling, Auto Sync dashboard</source><translation>새로운 작업 대기열 통합 스케줄링, 자동 동기화 대시보드</translation></message>
-    <message><source>System tray minimization with background auto sync</source><translation>시스템 트레이 최소화 및 백그라운드 자동 동기화</translation></message>
-    <message><source>Whoosh full-text search + Chinese word segmentation (jieba)</source><translation>Whoosh 전체 텍스트 검색 + 중국어 단어 분할 (jieba)</translation></message>
-    <message><source>Initial release based on PyQt5</source><translation>PyQt5 기반 초기 릴리스</translation></message>
-    <message><source>Basic file upload/download functionality</source><translation>기본 파일 업로드/다운로드 기능</translation></message>
-    <message><source>Telegram channel-based storage</source><translation>Telegram 채널 기반 스토리지</translation></message>
 
     
     <message><source>Failed to create directory</source><translation>디렉토리 생성 실패</translation></message>

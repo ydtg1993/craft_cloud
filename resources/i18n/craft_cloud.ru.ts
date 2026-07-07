@@ -342,16 +342,6 @@ Settings - Devices - Link Desktop</source><translation>Сканируйте че
     <message><source>Chinese word segmentation library</source><translation>Библиотека сегментации китайских слов</translation></message>
     <message><source>Disk cache library</source><translation>Библиотека дискового кэша</translation></message>
     <message><source>QR code generation library</source><translation>Библиотека генерации QR-кодов</translation></message>
-    <message><source>Version History</source><translation>История версий</translation></message>
-    <message><source>Complete architecture refactoring: layered architecture (core/model/services/view), SOLID principles</source><translation>Полный рефакторинг архитектуры: многоуровневая архитектура (core/model/services/view), принципы SOLID</translation></message>
-    <message><source>Technology stack modernization: SQLAlchemy 2.x ORM, Pydantic config, loguru logging</source><translation>Модернизация технологического стека: SQLAlchemy 2.x ORM, конфигурация Pydantic, логирование loguru</translation></message>
-    <message><source>UI upgrade: qfluentwidgets Fluent Design component library</source><translation>Обновление UI: библиотека компонентов qfluentwidgets Fluent Design</translation></message>
-    <message><source>New Task Queue unified scheduling, Auto Sync dashboard</source><translation>Новая очередь задач, панель автосинхронизации</translation></message>
-    <message><source>System tray minimization with background auto sync</source><translation>Сворачивание в системный трей с фоновой автосинхронизацией</translation></message>
-    <message><source>Whoosh full-text search + Chinese word segmentation (jieba)</source><translation>Полнотекстовый поиск Whoosh + сегментация китайских слов (jieba)</translation></message>
-    <message><source>Initial release based on PyQt5</source><translation>Первый выпуск на основе PyQt5</translation></message>
-    <message><source>Basic file upload/download functionality</source><translation>Базовая функциональность загрузки/скачивания файлов</translation></message>
-    <message><source>Telegram channel-based storage</source><translation>Хранилище на основе Telegram-каналов</translation></message>
 
     
     <message><source>Failed to create directory</source><translation>Не удалось создать папку</translation></message>

@@ -342,16 +342,6 @@ Settings - Devices - Link Desktop</source><translation>使用 Telegram App 扫�
     <message><source>Chinese word segmentation library</source><translation>中文分词组件</translation></message>
     <message><source>Disk cache library</source><translation>磁盘缓存库</translation></message>
     <message><source>QR code generation library</source><translation>二维码生成库</translation></message>
-    <message><source>Version History</source><translation>版本历史</translation></message>
-    <message><source>Complete architecture refactoring: layered architecture (core/model/services/view), SOLID principles</source><translation>全面架构重构：分层架构 (core/model/services/view)，SOLID 原则</translation></message>
-    <message><source>Technology stack modernization: SQLAlchemy 2.x ORM, Pydantic config, loguru logging</source><translation>技术栈现代化：SQLAlchemy 2.x ORM、Pydantic 配置、loguru 日志</translation></message>
-    <message><source>UI upgrade: qfluentwidgets Fluent Design component library</source><translation>UI 升级：qfluentwidgets Fluent Design 组件库</translation></message>
-    <message><source>New Task Queue unified scheduling, Auto Sync dashboard</source><translation>新增 Task Queue 统一调度、Auto Sync 仪表盘</translation></message>
-    <message><source>System tray minimization with background auto sync</source><translation>支持托盘最小化与后台自动同步</translation></message>
-    <message><source>Whoosh full-text search + Chinese word segmentation (jieba)</source><translation>Whoosh 全文搜索 + 中文分词 (jieba)</translation></message>
-    <message><source>Initial release based on PyQt5</source><translation>基于 PyQt5 的初始版本</translation></message>
-    <message><source>Basic file upload/download functionality</source><translation>基础文件上传/下载功能</translation></message>
-    <message><source>Telegram channel-based storage</source><translation>Telegram 频道关联存储</translation></message>
 
     
     <message><source>Failed to create directory</source><translation>创建目录失败</translation></message>
