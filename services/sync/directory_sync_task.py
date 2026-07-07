@@ -336,7 +336,7 @@ class DirectorySyncTask(BaseSyncTask):
                         )
                         cache_dir = get_cache_dir()
                         thumb_path, media_clip_path = generate_media_cache(
-                            local_info["local_path"], cache_dir
+                            local_info["local_path"], cache_dir, resource_id=file_id
                         )
                         self.db.files.update_file(
                             db_info["id"],
@@ -431,7 +431,7 @@ class DirectorySyncTask(BaseSyncTask):
                     )
                     cache_dir = get_cache_dir()
                     thumb_path, media_clip_path = generate_media_cache(
-                        local_info["local_path"], cache_dir
+                        local_info["local_path"], cache_dir, resource_id=file_id
                     )
                     ext = Path(local_info["name"]).suffix.lower()
                     self.db.files.add_file(

@@ -25,8 +25,13 @@ IMAGE_MAX_SIZE_BYTES = 0.5 * 1024 * 1024  # 图片压缩阈值 .5MB
 THUMB_SIZE = (256, 256)        # 缩略图尺寸
 
 
-def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
-    """为任意文件生成 256×256 JPEG 缩略图。先查 diskcache 缓存。"""
+def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE, resource_id=None):
+    """为任意文件生成 256×256 JPEG 缩略图。先查 diskcache 缓存。
+
+    Args:
+        resource_id: 可选唯一标识符（如 Telegram file_id），用于生成唯一文件名，
+                     避免不同扩展名的同名文件（1.webp / 1.jpg）缩略图撞名。
+    """
     cache = CacheManager()
     cache_key = f"thumb:{file_path}:{size[0]}x{size[1]}"
     cached = cache.get(cache_key)
@@ -35,9 +40,12 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
 
     if not Path(file_path).exists():
         return None
-    basename = Path(file_path).stem
-    safe_basename = re.sub(r'[^\w\-.]', '_', basename)
-    thumb_path = str(Path(output_dir) / f"{safe_basename}_thumb.jpg")
+    # 优先用 resource_id 做文件名前缀，避免同名不同扩展名文件撞名
+    if resource_id:
+        safe_prefix = re.sub(r'[^\w\-.]', '_', str(resource_id))
+    else:
+        safe_prefix = re.sub(r'[^\w\-.]', '_', Path(file_path).stem)
+    thumb_path = str(Path(output_dir) / f"{safe_prefix}_thumb.jpg")
     ext = Path(file_path).suffix.lower()
     media_exts = get_media_extensions()
     image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
@@ -71,11 +79,14 @@ def generate_thumbnail(file_path, output_dir, size=THUMB_SIZE):
     return None
 
 
-def generate_media_clip(file_path, output_dir, is_audio=False):
+def generate_media_clip(file_path, output_dir, is_audio=False, resource_id=None):
     """生成音视频预览切片。
 
     视频：最多 15s，分辨率 ≤ 240p，H.264 + AAC。
     音频：最多 30s，AAC 64kbps。
+
+    Args:
+        resource_id: 可选唯一标识符，用于生成唯一文件名。
     """
     cache = CacheManager()
     duration = AUDIO_CLIP_DURATION if is_audio else VIDEO_CLIP_DURATION
@@ -86,19 +97,21 @@ def generate_media_clip(file_path, output_dir, is_audio=False):
 
     if not Path(file_path).exists():
         return None
-    basename = Path(file_path).stem
-    safe_basename = re.sub(r'[^\w\-.]', '_', basename)
+    if resource_id:
+        safe_prefix = re.sub(r'[^\w\-.]', '_', str(resource_id))
+    else:
+        safe_prefix = re.sub(r'[^\w\-.]', '_', Path(file_path).stem)
 
     if is_audio:
         # 音频：一律重编码为 AAC 128kbps M4A，-c copy 在 flac/ogg 等格式上
         # -t 截断行为不可靠，且容器与编码可能不匹配
-        clip_path = str(Path(output_dir) / f"{safe_basename}_clip.m4a")
+        clip_path = str(Path(output_dir) / f"{safe_prefix}_clip.m4a")
         cmd = [get_ffmpeg_path(), '-i', file_path, '-t', str(duration),
                '-c:a', 'aac', '-b:a', AUDIO_BITRATE,
                '-vn', clip_path, '-y']
     else:
         # 视频：一律重编码以限制时长 + 分辨率，输出 MP4
-        clip_path = str(Path(output_dir) / f"{safe_basename}_clip.mp4")
+        clip_path = str(Path(output_dir) / f"{safe_prefix}_clip.mp4")
         cmd = [get_ffmpeg_path(), '-i', file_path, '-t', str(duration),
                '-vf', f'scale=-2:{VIDEO_MAX_HEIGHT}',
                '-c:v', 'libx264', '-preset', 'slow',
@@ -120,11 +133,14 @@ def generate_media_clip(file_path, output_dir, is_audio=False):
     return None
 
 
-def generate_image_preview(file_path, output_dir):
+def generate_image_preview(file_path, output_dir, resource_id=None):
     """为超大图片生成压缩版预览。
 
     先分析原始图片尺寸和文件大小，计算目标缩放比，一次压缩到位。
     策略：优先缩分辨率，质量保底 70。
+
+    Args:
+        resource_id: 可选唯一标识符，用于生成唯一文件名。
     """
     if not Path(file_path).exists():
         return None
@@ -144,9 +160,11 @@ def generate_image_preview(file_path, output_dir):
 
     try:
         from PIL import Image
-        basename = Path(file_path).stem
-        safe_basename = re.sub(r'[^\w\-.]', '_', basename)
-        preview_path = str(Path(output_dir) / f"{safe_basename}_preview.jpg")
+        if resource_id:
+            safe_prefix = re.sub(r'[^\w\-.]', '_', str(resource_id))
+        else:
+            safe_prefix = re.sub(r'[^\w\-.]', '_', Path(file_path).stem)
+        preview_path = str(Path(output_dir) / f"{safe_prefix}_preview.jpg")
 
         with Image.open(file_path) as img:
             w, h = img.size
@@ -214,25 +232,29 @@ def generate_image_preview(file_path, output_dir):
     return None
 
 
-def generate_media_cache(file_path, cache_dir):
+def generate_media_cache(file_path, cache_dir, resource_id=None):
     """统一生成媒体缓存（缩略图 + 预览文件）。
+
+    Args:
+        resource_id: 可选唯一标识符（如 Telegram file_id），用于生成唯一文件名，
+                     避免同名不同扩展名文件的缓存撞名。
 
     返回: (thumb_path, preview_path)
     - 视频/音频: preview_path 为切片 (.mp4/.mp3), thumb_path 为首帧缩略图
     - 图片: preview_path 为压缩版（原始 >2MB 时），thumb_path 为缩略图
     - 其他: 只生成缩略图，preview_path = None
     """
-    thumb_path = generate_thumbnail(file_path, cache_dir)
+    thumb_path = generate_thumbnail(file_path, cache_dir, resource_id=resource_id)
     media_preview_path = None
 
     ext = Path(file_path).suffix.lower()
     media_exts = get_media_extensions()
 
     if ext in media_exts['video']:
-        media_preview_path = generate_media_clip(file_path, cache_dir, is_audio=False)
+        media_preview_path = generate_media_clip(file_path, cache_dir, is_audio=False, resource_id=resource_id)
     elif ext in media_exts['audio']:
-        media_preview_path = generate_media_clip(file_path, cache_dir, is_audio=True)
+        media_preview_path = generate_media_clip(file_path, cache_dir, is_audio=True, resource_id=resource_id)
     elif ext in media_exts['image']:
-        media_preview_path = generate_image_preview(file_path, cache_dir)
+        media_preview_path = generate_image_preview(file_path, cache_dir, resource_id=resource_id)
 
     return thumb_path, media_preview_path

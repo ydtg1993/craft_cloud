@@ -142,7 +142,7 @@ class UploadManager(QObject):
                 # 上传已成功 — 以下全部为本地记录操作，失败不影响 TG 端结果
                 cache_dir = get_cache_dir()
                 try:
-                    thumb, clip = generate_media_cache(fp, cache_dir)
+                    thumb, clip = generate_media_cache(fp, cache_dir, resource_id=file_id)
                 except Exception:
                     logger.warning(f"[Upload] 媒体缓存生成失败，跳过: {fp}")
                     thumb, clip = None, None

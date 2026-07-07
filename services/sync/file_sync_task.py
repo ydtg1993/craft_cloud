@@ -288,7 +288,7 @@ class FileSyncTask(BaseSyncTask):
                     filename = Path(file_path).name
 
                     cache_dir = get_cache_dir()
-                    thumb_path, media_clip_path = generate_media_cache(file_path, cache_dir)
+                    thumb_path, media_clip_path = generate_media_cache(file_path, cache_dir, resource_id=file_id)
 
                     self.db.files.add_file(
                         file_id, msg_id, real_chat_id,
