@@ -18,15 +18,6 @@ from core.translator import tr
 from model.shared_types import sync_status_display
 
 
-STATUS_COLORS = {
-    "completed": "#4caf50", "syncing": "#2196f3",
-    "waiting": "#ff9800", "pending": "#ff9800",
-    "failed": "#f44336", "cancelled": "#9e9e9e", "error": "#f44336",
-    0: "#ff9800",   # pending
-    1: "#4caf50",   # success
-    2: "#f44336",   # failed
-}
-
 VALUE_STYLE = "QLabel { font-size: 13px; }"
 
 def _hint_style() -> str:
@@ -34,12 +25,6 @@ def _hint_style() -> str:
     is_dark = qfw_theme() == Theme.DARK
     c = "rgba(255,255,255,0.45)" if is_dark else "rgba(0,0,0,0.45)"
     return f"QLabel {{ color: {c}; font-size: 11px; }}"
-
-
-def _status_color(s):
-    if isinstance(s, int):
-        return STATUS_COLORS.get(s, "#9e9e9e")
-    return STATUS_COLORS.get((s or "").lower(), "#9e9e9e")
 
 
 def _val(text: str, wrap=False) -> BodyLabel:
@@ -58,11 +43,14 @@ class SyncFolderCard(GroupHeaderCardWidget):
     """单个同步目录的信息卡片，addGroup 每项一行。"""
 
     def __init__(self, summary, parent=None):
-        color = _status_color(summary.status)
         title = f"{summary.dir_name}  ·  {sync_status_display(summary.status)}"
         # 直接调基类避免 singledispatchmethod 在继承链中的二次分发问题
         HeaderCardWidget.__init__(self, parent)
         self.setTitle(title)
+        # 绕过 GroupHeaderCardWidget 后主题样式可能丢失，手动设标题颜色
+        is_dark = qfw_theme() == Theme.DARK
+        self.headerLabel.setStyleSheet(
+            f"color: {'#FFFFFF' if is_dark else '#000000'};")
 
         self._dir_id = summary.dir_id
         self._folder_path = summary.local_path
@@ -232,8 +220,9 @@ class SyncPage(QWidget):
         qconfig.themeChanged.connect(self._apply_theme_colors)
 
     def _apply_theme_colors(self):
-        """根据当前主题刷新容器和空状态标签颜色。"""
+        """根据当前主题刷新容器、空状态标签、卡片标题/hint 颜色。"""
         is_dark = qfw_theme() == Theme.DARK
+        title_c = "#FFFFFF" if is_dark else "#000000"
         bg = "rgba(255,255,255,0.06)" if is_dark else "rgba(0,0,0,0.04)"
         text_c = "rgba(255,255,255,0.35)" if is_dark else "rgba(0,0,0,0.35)"
         self._container.setStyleSheet(
@@ -241,10 +230,12 @@ class SyncPage(QWidget):
         if self._empty_label and shiboken6.isValid(self._empty_label):
             self._empty_label.setStyleSheet(
                 f"QLabel {{ color: {text_c}; padding: 40px 0; }}")
-        # 已存在的卡片 hint 标签也刷新
+        # 刷新已有卡片的标题 / hint 颜色
         for card in list(self._cards.values()):
             if not shiboken6.isValid(card):
                 continue
+            if hasattr(card, 'headerLabel') and card.headerLabel:
+                card.headerLabel.setStyleSheet(f"color: {title_c};")
             if hasattr(card, '_pct_label') and card._pct_label:
                 card._pct_label.setStyleSheet(_hint_style())
             # SyncFolderCard 里 time_label 不存引用，下次 refresh_all 重建即可
