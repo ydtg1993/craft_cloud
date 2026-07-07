@@ -13,3 +13,4 @@ diskcache>=5.0.0
 jieba>=0.42.0
 qrcode[pil]>=7.4.0
 SQLAlchemy>=2.0.0
+APScheduler>=3.10.0

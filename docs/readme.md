@@ -8,7 +8,7 @@
     </a>
 </p>
 
-# CraftCloud v2.7.7 🌐 [craftcloud.cc.cd](https://craftcloud.cc.cd/)
+# CraftCloud v2.8.1 🌐 [craftcloud.cc.cd](https://craftcloud.cc.cd/)
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6%2BQFluentWidgets-green)](https://doc.qt.io/qtforpython-6/)

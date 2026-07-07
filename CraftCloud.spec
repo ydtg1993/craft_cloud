@@ -1,82 +1,109 @@
 # -*- mode: python ; coding: utf-8 -*-
+"""PyInstaller spec — cross-platform (Windows / Linux / macOS)."""
 
-import os, sys
+import sys
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-# ── 项目模块 + 第三方库隐式导入 ───────────────────────────
+# ── Platform detection ──────────────────────────────────────────
+IS_WIN   = sys.platform == 'win32'
+IS_MACOS = sys.platform == 'darwin'
+IS_LINUX = sys.platform.startswith('linux')
+
+# ── Project modules + third-party hidden imports ─────────────────
 _hiddenimports = []
 
-# 项目自己的包
 for pkg in ['core', 'model', 'view', 'services']:
     _hiddenimports += collect_submodules(pkg)
 
-# Telethon 子包极多，使用 collect_submodules 一次性收集
 _hiddenimports += collect_submodules('telethon')
 
 _hiddenimports += [
-    # 🔑 关键密码学依赖（telethon 内部 try/except 引入，PyInstaller 追踪不到）
-    'rsa',
-    'rsa.core',
+    # Cryptography (Telethon internals, try/except imports)
+    'rsa', 'rsa.core',
     'pyaes',
     'cryptg',
 
-    # 🔑 QR 码（login_window.py 懒加载，PyInstaller 检测不到）
-    'qrcode',
-    'qrcode.image',
-    'qrcode.image.pil',
+    # QR code (lazy-imported in login_window.py)
+    'qrcode', 'qrcode.image', 'qrcode.image.pil',
 
-    # Qt 多媒体（文件预览）
+    # Qt Multimedia (file preview)
     'PySide6.QtMultimedia',
     'PySide6.QtMultimediaWidgets',
 
-    # 搜索引擎
-    'whoosh',
-    'whoosh.analysis',
-    'whoosh.lang',
-    'whoosh.lang.snowball',
+    # Search engine
+    'whoosh', 'whoosh.analysis', 'whoosh.lang', 'whoosh.lang.snowball',
 
-    # ORM 方言
-    'sqlalchemy',
-    'sqlalchemy.dialects.sqlite',
-    'sqlalchemy.event',
+    # ORM dialects
+    'sqlalchemy', 'sqlalchemy.dialects.sqlite', 'sqlalchemy.event',
 
-    # 配置 / 序列化
-    'pydantic',
-    'pydantic.deprecated',
+    # Config / serialization
+    'pydantic', 'pydantic.deprecated',
 
     # GUI
     'qfluentwidgets',
 
-    # 图像
+    # Imaging
     'PIL',
 
     # YAML
     'yaml',
 
-    # asyncio（Windows 打包后子线程事件循环需要）
+    # asyncio event loop policies
     'asyncio',
-    'asyncio.windows_events',
-    'asyncio.windows_utils',
 
-    # apscheduler 需要 pkg_resources
+    # APScheduler needs pkg_resources (setuptools >= 82 removed it)
     'pkg_resources',
 ]
 
-# ── 数据文件收集 ──────────────────────────────────────────
+# Platform-specific hidden imports
+if IS_WIN:
+    _hiddenimports += [
+        'asyncio.windows_events',
+        'asyncio.windows_utils',
+    ]
+elif IS_MACOS:
+    _hiddenimports += [
+        'asyncio.unix_events',
+    ]
+elif IS_LINUX:
+    _hiddenimports += [
+        'asyncio.unix_events',
+    ]
+
+# ── Data files ──────────────────────────────────────────────────
 _datas = [
-    ('resources', 'resources'),            # 图标 + i18n 翻译文件
-    ('config', 'config'),                  # 默认配置文件
+    ('resources', 'resources'),
+    ('config', 'config'),
 ]
 
-# ffmpeg 可执行文件（可选：如果 scripts/ 下有 ffmpeg.exe 则打包）
-_ffmpeg_src = Path(SPECPATH).resolve() / "scripts" / "ffmpeg.exe"
+# ffmpeg binary (optional, bundled for media preview)
+_ffmpeg_name = 'ffmpeg.exe' if IS_WIN else 'ffmpeg'
+_ffmpeg_src = Path(SPECPATH).resolve() / 'scripts' / _ffmpeg_name
 if _ffmpeg_src.is_file():
     _datas.append((str(_ffmpeg_src), 'scripts'))
-_datas += collect_data_files('qfluentwidgets')   # QFluentWidgets 图标/样式
-_datas += collect_data_files('jieba')            # jieba 分词词典
 
-# ── Analysis ──────────────────────────────────────────────
+_datas += collect_data_files('qfluentwidgets')
+_datas += collect_data_files('jieba')
+
+# ── Icon (platform-specific format) ─────────────────────────────
+if IS_WIN:
+    _icon_path = 'resources/cc.ico'
+elif IS_MACOS:
+    _icon_path = 'resources/cc.icns'
+else:
+    _icon_path = 'resources/cc.png'  # Linux DEs accept PNG
+
+# ── Excludes (reduce bundle size) ───────────────────────────────
+_excludes = [
+    'matplotlib', 'scipy', 'pandas',
+    'IPython', 'jupyter',
+    'tkinter', 'unittest', 'pydoc',
+    'distutils', 'pip',
+    'PyQt5',
+]
+
+# ── Analysis ────────────────────────────────────────────────────
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -86,36 +113,18 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        'matplotlib',
-        'scipy',
-        'pandas',
-        'IPython',
-        'jupyter',
-        'tkinter',
-        'unittest',
-        'pydoc',
-        'distutils',
-        'pip',
-        'PyQt5',            # 与 PySide6 冲突，PyInstaller 直接 abort
-    ],
+    excludes=_excludes,
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
     noarchive=False,
 )
 
-# ── PYZ ───────────────────────────────────────────────────
+# ── PYZ ─────────────────────────────────────────────────────────
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-# ── EXE ───────────────────────────────────────────────────
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
+# ── EXE ─────────────────────────────────────────────────────────
+_exe_kwargs = dict(
     name='CraftCloud',
     debug=False,
     bootloader_ignore_signals=False,
@@ -128,10 +137,16 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='resources/cc.ico',
+    icon=_icon_path,
 )
 
-# ── COLLECT ───────────────────────────────────────────────
+# macOS: .app bundle instead of raw executable
+if IS_MACOS:
+    _exe_kwargs['argv_emulation'] = True
+
+exe = EXE(pyz, a.scripts, a.binaries, a.zipfiles, a.datas, [], **_exe_kwargs)
+
+# ── COLLECT ─────────────────────────────────────────────────────
 coll = COLLECT(
     exe,
     a.binaries,
@@ -142,3 +157,20 @@ coll = COLLECT(
     upx_exclude=[],
     name='CraftCloud',
 )
+
+# ── macOS: create .app bundle ───────────────────────────────────
+if IS_MACOS:
+    app = BUNDLE(
+        coll,
+        name='CraftCloud.app',
+        icon=_icon_path,
+        bundle_identifier='cc.craftcloud.app',
+        info_plist={
+            'CFBundleDisplayName': 'CraftCloud',
+            'CFBundleName': 'CraftCloud',
+            'CFBundleShortVersionString': '2.8.1',
+            'CFBundleVersion': '2.8.1',
+            'NSHighResolutionCapable': True,
+            'LSMinimumSystemVersion': '11.0',
+        },
+    )

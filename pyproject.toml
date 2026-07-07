@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "craft_cloud"
-version = "2.7.7"
+version = "2.8.1"
 description = "CraftCloud — 将 Telegram 作为无限云存储的桌面客户端"
 readme = "docs/readme.md"
 license = {file = "docs/LICENSE.txt"}
@@ -13,6 +13,8 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -35,6 +37,7 @@ dependencies = [
     "jieba>=0.42.0",
     "qrcode[pil]>=7.4.0",
     "SQLAlchemy>=2.0.0",
+    "APScheduler>=3.10.0",
 ]
 
 [project.scripts]
@@ -48,5 +51,4 @@ dev-dependencies = [
     "pytest>=8.0.0",
     "pytest-qt>=4.0.0",
     "pytest-asyncio>=0.23.0",
-    "APScheduler>=3.10.0",
 ]

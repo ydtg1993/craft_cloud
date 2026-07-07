@@ -1,6 +1,6 @@
 [Setup]
 AppName=CraftCloud
-AppVersion=2.7.7
+AppVersion=2.8.1
 DefaultDirName={autopf}\CraftCloud
 DefaultGroupName=CraftCloud
 OutputDir=.\installer_output
