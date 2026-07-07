@@ -24,7 +24,7 @@ import threading
 import time as _time_module
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, Signal, QObject
+from PySide6.QtCore import Qt, QTimer, Signal, QObject
 from loguru import logger
 
 from core.translator import tr
@@ -343,19 +343,31 @@ class SyncScheduler(QObject):
         # ── Phase 3: 创建并执行同步任务（在本后台线程内同步运行） ──
         self._client_was_disconnected = client_disconnected
         task = DirectorySyncTask(folder_path, self.config_manager, self.db, self._stop_event)
-        task.signals.progress.connect(lambda d, t: self.sync_progress.emit(folder_path, d, t))
-        task.signals.completed.connect(lambda count: self._on_sync_done(folder_path, count))
-        task.signals.error.connect(lambda err: (
-            logger.error(f"[SyncScheduler] 任务错误: {folder_path} -> {err}"),
-            self.sync_status.emit(folder_path, f"{tr('Failed')}: {err}")
-        ))
-        task.signals.cancelled.connect(lambda: (
-            logger.warning(f"[SyncScheduler] 任务被取消: {folder_path}"),
-            self.sync_status.emit(folder_path, tr("Cancelled")),
-            self.sync_completed.emit(folder_path, 0),
-        ))
+        task.signals.progress.connect(
+            lambda d, t: self.sync_progress.emit(folder_path, d, t),
+            Qt.QueuedConnection,
+        )
+        task.signals.completed.connect(
+            lambda count: self._on_sync_done(folder_path, count),
+            Qt.QueuedConnection,
+        )
+        task.signals.error.connect(
+            lambda err: (
+                logger.error(f"[SyncScheduler] 任务错误: {folder_path} -> {err}"),
+                self.sync_status.emit(folder_path, f"{tr('Failed')}: {err}"),
+            ),
+            Qt.QueuedConnection,
+        )
+        task.signals.cancelled.connect(
+            lambda: (
+                logger.warning(f"[SyncScheduler] 任务被取消: {folder_path}"),
+                self.sync_status.emit(folder_path, tr("Cancelled")),
+                self.sync_completed.emit(folder_path, 0),
+            ),
+            Qt.QueuedConnection,
+        )
         # finished 信号仅做账本清理（reconnect 在 task.run() 之后内联执行）
-        task.signals.finished.connect(self._on_task_done)
+        task.signals.finished.connect(self._on_task_done, Qt.QueuedConnection)
         self._current_task = task
 
         # 在本线程同步执行同步逻辑（阻塞本线程，不影响 UI）

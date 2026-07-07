@@ -3,7 +3,7 @@
 按配置的同步目录分组，每个目录用 GroupHeaderCardWidget 卡片展示
 完整信息（addGroup 分行）：本地路径、TG频道ID、频道名、总文件数、已同步数、已同步大小。
 """
-import os
+from pathlib import Path
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                 QScrollArea, QFrame)
 from PySide6.QtCore import Qt, QUrl
@@ -168,8 +168,9 @@ class SyncFolderCard(GroupHeaderCardWidget):
 
     def _open_local_folder(self):
         """在资源管理器中打开本地同步文件夹。"""
-        if self._folder_path and os.path.exists(self._folder_path):
-            os.startfile(self._folder_path)
+        folder = Path(self._folder_path) if self._folder_path else None
+        if folder and folder.exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder)))
 
     def _open_tg_channel(self):
         """在浏览器中打开对应的 Telegram 频道。"""

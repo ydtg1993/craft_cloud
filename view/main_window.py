@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QFileDialog, QMessageBox
 from PySide6.QtCore import Qt, Signal, QPoint
@@ -419,13 +418,14 @@ class MainWindow(FluentWindow):
         items = self.file_manager.get_current_dir_items(dir_id)
         self.home_page.file_view.load_items(items)
         path = self.file_manager.get_breadcrumb_path(dir_id)
-        self.home_page.breadcrumb.currentItemChanged.disconnect(self._on_breadcrumb_changed)
+        # 使用 blockSignals 避免断开/重连信号 — 更安全且更清晰
+        self.home_page.breadcrumb.blockSignals(True)
         self.home_page.breadcrumb.clear()
         for d_id, name in path:
             self.home_page.breadcrumb.addItem(str(d_id), name)
         if str(dir_id) in self.home_page.breadcrumb.itemMap:
             self.home_page.breadcrumb.setCurrentItem(str(dir_id))
-        self.home_page.breadcrumb.currentItemChanged.connect(self._on_breadcrumb_changed)
+        self.home_page.breadcrumb.blockSignals(False)
 
 
     def _on_item_activated(self, item_id, is_dir):
@@ -587,7 +587,7 @@ class MainWindow(FluentWindow):
         session_file = get_sessions_dir() / "my_account.session"
         if session_file.exists():
             try:
-                os.remove(str(session_file))
+                session_file.unlink(missing_ok=True)
             except Exception as e:
                 logger.warning(f"删除 session 文件失败: {e}")
         self.config_manager.save_now()
@@ -608,11 +608,23 @@ class MainWindow(FluentWindow):
         session_file = get_sessions_dir() / "my_account.session"
         if session_file.exists():
             try:
-                os.remove(str(session_file))
+                session_file.unlink(missing_ok=True)
             except Exception as e:
                 logger.warning(f"删除 session 文件失败: {e}")
         self.config_manager.save_now()
         self.logout_requested.emit()
+
+    def cleanup_and_close(self):
+        """销毁托盘图标并真正关闭窗口（不是最小化到托盘）。
+
+        调用此方法而不是 close() 当需要完全销毁窗口时
+        （例如退出应用、重新登录时替换主窗口）。
+        """
+        if hasattr(self, 'tray_icon') and self.tray_icon:
+            self.tray_icon.hide()
+            self.tray_icon.deleteLater()
+            self.tray_icon = None
+        self.close()  # closeEvent 会接受，因为 tray_icon 已为 None
 
     def closeEvent(self, event):
         # 如果托盘图标已被销毁（来自 _real_exit 的真正退出），直接关闭
@@ -682,4 +694,6 @@ class MainWindow(FluentWindow):
             self.tray_icon.hide()
             self.tray_icon.deleteLater()
             self.tray_icon = None
+        # 处理延迟删除事件，确保托盘图标被彻底清理后再退出
+        QApplication.processEvents()
         QApplication.instance().quit()

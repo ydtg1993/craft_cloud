@@ -245,13 +245,12 @@ class FileRepository:
                 session.commit()
                 indexer_name = display_name or original_name
                 logger.info(f"[DB] 文件记录已保存: id={file_pk}, name={indexer_name}, dir={directory_id}")
-            except SQLAlchemyError as e:
-                session.rollback()
-                logger.error(f"[DB] 保存文件记录失败: {e}, name={display_name or original_name}, dir={directory_id}")
-                raise
             except Exception:
                 session.rollback()
-                logger.exception(f"[DB] 保存文件记录时发生未预期错误: name={display_name or original_name}")
+                logger.exception(
+                    f"[DB] 保存文件记录失败: "
+                    f"name={display_name or original_name}, dir={directory_id}"
+                )
                 raise
 
         # Phase 2: Whoosh indexing OUTSIDE db_write_guard

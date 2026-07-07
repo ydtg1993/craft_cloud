@@ -1,11 +1,13 @@
 """Generate TS + QM files for new languages from zh_CN.ts template."""
 import xml.etree.ElementTree as ET
-import copy, os, subprocess
+import copy, subprocess
+from pathlib import Path
 
-I18N_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'resources', 'i18n')
-LRELEASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'venv', 'lib', 'site-packages', 'PySide6', 'lrelease.exe')
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+I18N_DIR = _PROJECT_ROOT / 'resources' / 'i18n'
+LRELEASE = str(_PROJECT_ROOT / 'venv' / 'lib' / 'site-packages' / 'PySide6' / 'lrelease.exe')
 
-BASE_TS = os.path.join(I18N_DIR, 'craft_cloud.zh_CN.ts')
+BASE_TS = str(I18N_DIR / 'craft_cloud.zh_CN.ts')
 
 # ── Key UI translations per language ──────────────────────────
 TRANSLATIONS = {
@@ -393,8 +395,8 @@ def main():
                     trans_el.text = translations[source]
                 count += 1
 
-        out_ts = os.path.join(I18N_DIR, f'craft_cloud.{code}.ts')
-        out_qm = os.path.join(I18N_DIR, f'craft_cloud.{code}.qm')
+        out_ts = str(I18N_DIR / f'craft_cloud.{code}.ts')
+        out_qm = str(I18N_DIR / f'craft_cloud.{code}.qm')
 
         tree_copy = ET.ElementTree(new_root)
         tree_copy.write(out_ts, encoding='utf-8', xml_declaration=True)

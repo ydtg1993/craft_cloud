@@ -213,15 +213,19 @@ class LoginWindow(QDialog):
 
         self._abort_event.set()
         if self._client:
-            try: asyncio.run(self._client.disconnect())
-            except Exception: pass
+            try:
+                asyncio.run(self._client.disconnect())
+            except Exception:
+                logger.debug("disconnect 时发生异常（忽略）")
             self._client = None
         self._qr_login_obj = None
 
         session_path = Path(WORK_DIR, "my_account.session")
         if session_path.exists():
-            try: session_path.unlink()
-            except OSError: pass
+            try:
+                session_path.unlink()
+            except OSError:
+                logger.debug(f"无法删除旧 session 文件（可能已被占用）: {session_path}")
 
         self._abort_event.clear()
         self.generate_btn.setEnabled(False)
@@ -348,10 +352,15 @@ class LoginWindow(QDialog):
 
     def closeEvent(self, event):
         self._abort_event.set()
-        if self._client:
-            try: asyncio.run(self._client.disconnect())
-            except Exception: pass
         event.accept()
+        if self._client:
+            # 在后台线程中断开，避免 asyncio.run() 阻塞 GUI 线程
+            client = self._client
+            self._client = None
+            threading.Thread(
+                target=lambda c=client: asyncio.run(c.disconnect()),
+                daemon=True, name="login-disconnect"
+            ).start()
         QApplication.instance().quit()
 
     def _on_login_success(self):

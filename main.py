@@ -71,7 +71,7 @@ def main():
         nonlocal main_window
         from view.main_window import MainWindow
         if main_window is not None:
-            main_window.close()
+            main_window.cleanup_and_close()
 
         main_window = MainWindow(config_mgr)
         main_window.logout_requested.connect(show_login_window)
@@ -84,7 +84,7 @@ def main():
         nonlocal main_window
         from view.login_window import LoginWindow
         if main_window is not None:
-            main_window.close()
+            main_window.cleanup_and_close()
             main_window = None
         login = LoginWindow(config_mgr)
         if login.exec() == LoginWindow.Accepted:

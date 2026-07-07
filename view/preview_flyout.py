@@ -308,6 +308,9 @@ class PreviewFlyoutView(MessageBoxBase):
         """初始化 Qt Multimedia 播放器（确保只执行一次）"""
         if self._player_initialized:
             return
+        # 防止在关闭过程中被延迟定时器重新初始化播放器
+        if getattr(self, "_closing", False):
+            return
         if not self.media_path or (not self.is_video and not self.is_audio):
             return
 
@@ -512,6 +515,9 @@ class PreviewFlyoutView(MessageBoxBase):
             self.video_widget.deleteLater()
             self.video_widget = None
         self._player_initialized = False
+        self.media_path = None
+        self.is_video = False
+        self.is_audio = False
 
     def _safe_close(self):
         if getattr(self, "_closing", False):
