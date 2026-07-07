@@ -5,6 +5,7 @@
 - 本地迁移的文件（通过哈希匹配）
 - TG 消息的上传/删除/编辑
 """
+import time as _time
 from pathlib import Path
 
 from loguru import logger
@@ -36,6 +37,9 @@ class DirectorySyncTask(BaseSyncTask):
 
     def _do_sync(self, target_dir_id, telethon_cfg, folder_config):
         """执行全量目录树对比同步。"""
+        config = self.config_manager.config
+        upload_interval = config.get("auto_sync_settings", {}).get("upload_interval", 1)
+
         # 1. 扫描本地目录结构
         local_structure = self._scan_local_directory()
         if not local_structure:
@@ -59,7 +63,7 @@ class DirectorySyncTask(BaseSyncTask):
 
         # 3. 比较并同步结构
         sync_result = self._sync_structures(
-            local_structure, db_structure, target_dir_id, telethon_cfg
+            local_structure, db_structure, target_dir_id, telethon_cfg, upload_interval
         )
 
         if self.stop_event.is_set():
@@ -166,7 +170,7 @@ class DirectorySyncTask(BaseSyncTask):
 
     # ── 结构同步 ──────────────────────────────────────────────
 
-    def _sync_structures(self, local_structure, db_structure, root_dir_id, telethon_cfg):
+    def _sync_structures(self, local_structure, db_structure, root_dir_id, telethon_cfg, upload_interval=1):
         """同步本地结构和数据库结构。"""
         result = {
             "total_changes": 0,
@@ -355,6 +359,9 @@ class DirectorySyncTask(BaseSyncTask):
                         result["files_added"] += 1
                     except Exception as e:
                         logger.error(f"[{self._log_tag}] 更新文件失败 {local_info['local_path']}: {e}")
+
+                    if upload_interval > 0 and not self.stop_event.is_set():
+                        _time.sleep(upload_interval)
                 else:
                     # 内容没变，检查改名和迁移
                     if local_info["name"] != db_info["display_name"]:
@@ -448,6 +455,9 @@ class DirectorySyncTask(BaseSyncTask):
                     result["files_added"] += 1
                 except Exception as e:
                     logger.error(f"[{self._log_tag}] 上传文件失败 {local_info['local_path']}: {e}")
+
+                if upload_interval > 0 and not self.stop_event.is_set():
+                    _time.sleep(upload_interval)
 
         result["total_changes"] = (
             result["dirs_added"] + result["dirs_deleted"] + result["dirs_renamed"] +
