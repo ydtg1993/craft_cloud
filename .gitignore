@@ -31,6 +31,9 @@ dist/
 installer_output/
 *.spec.bak
 
+# ── Binary tools (download separately or via CI) ──────────────────
+scripts/ffmpeg.exe
+
 # ── IDE ────────────────────────────────────────────────────────────
 .idea/
 .vscode/

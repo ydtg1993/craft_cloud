@@ -1,0 +1,111 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # ── Linux Qt system libraries ───────────────────────────
+      - name: Install Linux Qt deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libegl1 libgl1-mesa-glx libxkbcommon-x11-0 \
+            libfontconfig1 libdbus-1-3 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 \
+            libxcb-xinerama0 libxcb-xkb1 libxkbcommon0
+
+      # ── macOS icon ──────────────────────────────────────────
+      - name: Prepare macOS icon
+        if: runner.os == 'macOS'
+        run: |
+          if [ ! -f resources/cc.icns ] && [ -f resources/cc512.png ]; then
+            mkdir -p /tmp/cc.iconset
+            sips -z 16 16   resources/cc512.png --out /tmp/cc.iconset/icon_16x16.png
+            sips -z 32 32   resources/cc512.png --out /tmp/cc.iconset/icon_16x16@2x.png
+            sips -z 32 32   resources/cc512.png --out /tmp/cc.iconset/icon_32x32.png
+            sips -z 64 64   resources/cc512.png --out /tmp/cc.iconset/icon_32x32@2x.png
+            sips -z 128 128 resources/cc512.png --out /tmp/cc.iconset/icon_128x128.png
+            sips -z 256 256 resources/cc512.png --out /tmp/cc.iconset/icon_128x128@2x.png
+            sips -z 256 256 resources/cc512.png --out /tmp/cc.iconset/icon_256x256.png
+            sips -z 512 512 resources/cc512.png --out /tmp/cc.iconset/icon_256x256@2x.png
+            sips -z 512 512 resources/cc512.png --out /tmp/cc.iconset/icon_512x512.png
+            iconutil -c icns /tmp/cc.iconset -o resources/cc.icns || true
+            rm -rf /tmp/cc.iconset
+          fi
+
+      # ── Dependencies ────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # ── Build ───────────────────────────────────────────────
+      - name: Build with PyInstaller
+        run: pyinstaller --clean --noconfirm CraftCloud.spec
+
+      # ── Upload ──────────────────────────────────────────────
+      - name: Upload (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CraftCloud-${{ github.ref_name }}-win64
+          path: dist/CraftCloud/
+
+      - name: Upload (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CraftCloud-${{ github.ref_name }}-macos
+          path: dist/CraftCloud.app/
+
+      - name: Upload (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CraftCloud-${{ github.ref_name }}-linux
+          path: dist/CraftCloud/
